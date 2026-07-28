@@ -819,22 +819,10 @@
    *  Instance
    * ------------------------------------------------------------------ */
 
-  function createAccordion(root, settings, data) {
+  function createAccordion(root, settings, items, mode) {
     const controller = new AbortController();
     const signal = controller.signal;
     const uid = root.id || "va-" + Math.random().toString(36).slice(2, 9);
-
-    const mode =
-      settings.contentMode === "auto"
-        ? data.isPortfolio
-          ? "sections"
-          : "fields"
-        : settings.contentMode;
-
-    let items = data.items.slice();
-    if (settings.reverseOrder) items.reverse();
-    const limit = Math.min(MAX_PANELS, Math.max(1, toNumber(settings.panelLimit, 5)));
-    items = items.slice(0, limit);
 
     root.innerHTML =
       '<div class="vertical-accordions" data-mode="' + mode + '">' +
@@ -1229,6 +1217,27 @@
    *  Init
    * ------------------------------------------------------------------ */
 
+  // Portfolio items are whole pages: the list JSON carries no body, so each
+  // item's page is fetched and its #sections lifted out. Only the items that
+  // will actually become panels are fetched.
+  async function hydrateSections(items) {
+    await Promise.all(
+      items.map(async (item) => {
+        if (item.body && item.body.indexOf('id="sections"') !== -1) return;
+        if (!item.fullUrl) return;
+        const sections = await fetchItemSections(item.fullUrl);
+        if (sections) item.body = sections;
+      })
+    );
+  }
+
+  function selectItems(allItems, settings) {
+    const items = allItems.slice();
+    if (settings.reverseOrder) items.reverse();
+    const limit = Math.min(MAX_PANELS, Math.max(1, toNumber(settings.panelLimit, 5)));
+    return items.slice(0, limit);
+  }
+
   async function buildOne(el) {
     const settings = readInstanceSettings(el);
 
@@ -1247,11 +1256,22 @@
         el.classList.remove("loaded");
         return;
       }
+
+      const mode =
+        settings.contentMode === "auto"
+          ? data.isPortfolio
+            ? "sections"
+            : "fields"
+          : settings.contentMode;
+
+      const items = selectItems(data.items, settings);
+      if (mode === "sections") await hydrateSections(items);
+
       if (el.sdlVerticalAccordion && typeof el.sdlVerticalAccordion.destroy === "function") {
         el.sdlVerticalAccordion.destroy();
         el.classList.add("loaded");
       }
-      el.sdlVerticalAccordion = createAccordion(el, settings, data);
+      el.sdlVerticalAccordion = createAccordion(el, settings, items, mode);
     } catch (error) {
       console.error(PLUGIN_TITLE + ': could not build from "' + settings.source + '"', error);
       el.classList.remove("loaded");
