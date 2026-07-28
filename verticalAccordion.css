@@ -68,7 +68,7 @@
   border-left: var(--va-border-width) solid var(--va-divider-color, var(--va-border-color));
 }
 
-[data-sdl-plugin="vertical-accordions"]:not([data-color-mode="theme"])
+[data-sdl-plugin="vertical-accordions"]:not([data-va-color-mode="theme"])
   .accordion-panel {
   --va-divider-color: currentColor;
 }
@@ -89,11 +89,11 @@
   transition: background-color var(--va-transition-duration) var(--va-easing);
 }
 
-[data-sdl-plugin="vertical-accordions"][data-rail-side="right"] .accordion-panel {
+[data-sdl-plugin="vertical-accordions"][data-va-rail-side="right"] .accordion-panel {
   flex-direction: row-reverse;
 }
 
-[data-sdl-plugin="vertical-accordions"][data-height-mode="content"] .accordion-panel {
+[data-sdl-plugin="vertical-accordions"][data-va-height-mode="content"] .accordion-panel {
   height: clamp(
     var(--va-min-panel-height),
     var(--va-tallest-panel-height, var(--va-min-panel-height)),
@@ -102,7 +102,7 @@
   min-height: var(--va-min-panel-height);
 }
 
-[data-sdl-plugin="vertical-accordions"][data-height-mode="fixed"] .accordion-panel {
+[data-sdl-plugin="vertical-accordions"][data-va-height-mode="fixed"] .accordion-panel {
   height: var(--va-fixed-height);
 }
 
@@ -167,10 +167,10 @@
   letter-spacing: var(--va-accordion-title-letter-spacing, inherit);
 }
 
-[data-sdl-plugin="vertical-accordions"][data-title-align="start"] .accordion-title .text {
+[data-sdl-plugin="vertical-accordions"][data-va-title-align="start"] .accordion-title .text {
   align-items: flex-start;
 }
-[data-sdl-plugin="vertical-accordions"][data-title-align="center"] .accordion-title .text {
+[data-sdl-plugin="vertical-accordions"][data-va-title-align="center"] .accordion-title .text {
   align-items: center;
 }
 
@@ -184,7 +184,7 @@
 }
 
 /* Both reference builds read bottom-to-top. */
-[data-sdl-plugin="vertical-accordions"][data-text-direction="up"] .va-rail__label {
+[data-sdl-plugin="vertical-accordions"][data-va-text-direction="up"] .va-rail__label {
   transform: rotate(180deg);
 }
 
@@ -199,22 +199,22 @@
   color: var(--va-accordion-title-color, inherit);
 }
 
-[data-sdl-plugin="vertical-accordions"][data-icon-placement="top"] .icon-wrapper {
+[data-sdl-plugin="vertical-accordions"][data-va-icon-placement="top"] .icon-wrapper {
   order: -1;
 }
-[data-sdl-plugin="vertical-accordions"][data-icon-placement="top"] .va-rail__num {
+[data-sdl-plugin="vertical-accordions"][data-va-icon-placement="top"] .va-rail__num {
   order: -2;
 }
 
-[data-sdl-plugin="vertical-accordions"][data-icon-shape="circle"] .icon-wrapper,
-[data-sdl-plugin="vertical-accordions"][data-icon-shape="square"] .icon-wrapper {
+[data-sdl-plugin="vertical-accordions"][data-va-icon-shape="circle"] .icon-wrapper,
+[data-sdl-plugin="vertical-accordions"][data-va-icon-shape="square"] .icon-wrapper {
   padding: calc(var(--va-icon-width) * 0.42);
   border: 1px solid currentColor;
 }
-[data-sdl-plugin="vertical-accordions"][data-icon-shape="circle"] .icon-wrapper {
+[data-sdl-plugin="vertical-accordions"][data-va-icon-shape="circle"] .icon-wrapper {
   border-radius: 50%;
 }
-[data-sdl-plugin="vertical-accordions"][data-icon-shape="square"] .icon-wrapper {
+[data-sdl-plugin="vertical-accordions"][data-va-icon-shape="square"] .icon-wrapper {
   border-radius: 4px;
 }
 
@@ -302,13 +302,13 @@
   gap: 1.2em;
 }
 
-[data-sdl-plugin="vertical-accordions"][data-content-align="top"] .va-card {
+[data-sdl-plugin="vertical-accordions"][data-va-content-align="top"] .va-card {
   justify-content: flex-start;
 }
-[data-sdl-plugin="vertical-accordions"][data-content-align="center"] .va-card {
+[data-sdl-plugin="vertical-accordions"][data-va-content-align="center"] .va-card {
   justify-content: center;
 }
-[data-sdl-plugin="vertical-accordions"][data-content-align="bottom"] .va-card {
+[data-sdl-plugin="vertical-accordions"][data-va-content-align="bottom"] .va-card {
   justify-content: flex-end;
 }
 
@@ -360,17 +360,17 @@
    events and product collections on desktop.
    -------------------------------------------------------------------------- */
 
-[data-sdl-plugin="vertical-accordions"][data-card-layout="split"] .va-card {
+[data-sdl-plugin="vertical-accordions"][data-va-card-layout="split"] .va-card {
   flex-direction: row;
   align-items: stretch;
   gap: var(--va-content-padding, 40px);
 }
 
-[data-sdl-plugin="vertical-accordions"][data-card-layout="split"][data-split-side="right"] .va-card {
+[data-sdl-plugin="vertical-accordions"][data-va-card-layout="split"][data-va-split-side="right"] .va-card {
   flex-direction: row-reverse;
 }
 
-[data-sdl-plugin="vertical-accordions"][data-card-layout="split"] .va-card__media[data-fit="split"] {
+[data-sdl-plugin="vertical-accordions"][data-va-card-layout="split"] .va-card__media[data-fit="split"] {
   position: relative;
   inset: auto;
   flex: 0 0 var(--va-split-ratio, 50%);
@@ -378,27 +378,27 @@
   align-self: stretch;
 }
 
-[data-sdl-plugin="vertical-accordions"][data-card-layout="split"]
+[data-sdl-plugin="vertical-accordions"][data-va-card-layout="split"]
   .va-card__media[data-fit="split"] img {
   object-fit: cover;
 }
 
-[data-sdl-plugin="vertical-accordions"][data-card-layout="split"] .va-card__body {
+[data-sdl-plugin="vertical-accordions"][data-va-card-layout="split"] .va-card__body {
   flex: 1 1 auto;
   min-width: 0;
   align-self: center;
   max-width: 46ch;
 }
 
-[data-sdl-plugin="vertical-accordions"][data-card-layout="split"][data-content-align="top"] .va-card__body {
+[data-sdl-plugin="vertical-accordions"][data-va-card-layout="split"][data-va-content-align="top"] .va-card__body {
   align-self: flex-start;
 }
-[data-sdl-plugin="vertical-accordions"][data-card-layout="split"][data-content-align="bottom"] .va-card__body {
+[data-sdl-plugin="vertical-accordions"][data-va-card-layout="split"][data-va-content-align="bottom"] .va-card__body {
   align-self: flex-end;
 }
 
 /* Nothing to split when there's no image. */
-[data-sdl-plugin="vertical-accordions"][data-card-layout="split"]
+[data-sdl-plugin="vertical-accordions"][data-va-card-layout="split"]
   .va-card:not(:has(.va-card__media))
   .va-card__body {
   max-width: 62ch;
@@ -425,12 +425,37 @@
   color: inherit;
 }
 
+/* A themed button is coloured for the page background, not for a photograph, so
+   over an image it can vanish. These opt-in treatments have to outrank the site's
+   own button rules, which is what the extra weight and !important are for. */
+#siteWrapper
+  [data-sdl-plugin="vertical-accordions"]
+  .va-card[data-over-image="true"][data-over-button="solid"]
+  .va-card__btn,
+[data-sdl-plugin="vertical-accordions"]
+  .va-card[data-over-image="true"][data-over-button="solid"]
+  .va-card__btn {
+  background: var(--va-overlay-text, #ffffff) !important;
+  border-color: var(--va-overlay-text, #ffffff) !important;
+  color: var(--va-overlay-on, var(--va-panel-background, #111111)) !important;
+}
+
+#siteWrapper
+  [data-sdl-plugin="vertical-accordions"]
+  .va-card[data-over-image="true"][data-over-button="outline"]
+  .va-card__btn,
+[data-sdl-plugin="vertical-accordions"]
+  .va-card[data-over-image="true"][data-over-button="outline"]
+  .va-card__btn {
+  background: transparent !important;
+  border: 1px solid var(--va-overlay-text, #ffffff) !important;
+  color: var(--va-overlay-text, #ffffff) !important;
+}
+
 [data-sdl-plugin="vertical-accordions"]
   .va-card[data-over-image="true"]
-  .sqs-button-element--primary {
-  background-color: var(--va-overlay-text, #ffffff);
-  border-color: var(--va-overlay-text, #ffffff);
-  color: var(--va-panel-background, #111111);
+  .va-card__link {
+  color: var(--va-overlay-text, #ffffff);
 }
 
 [data-sdl-plugin="vertical-accordions"] .va-card__body {
@@ -732,12 +757,12 @@
 }
 
 /* A two-column split has nowhere to go on a phone — stack it. */
-[data-sdl-plugin="vertical-accordions"].va-mobile[data-card-layout="split"] .va-card,
-[data-sdl-plugin="vertical-accordions"].va-mobile[data-card-layout="split"][data-split-side="right"] .va-card {
+[data-sdl-plugin="vertical-accordions"].va-mobile[data-va-card-layout="split"] .va-card,
+[data-sdl-plugin="vertical-accordions"].va-mobile[data-va-card-layout="split"][data-va-split-side="right"] .va-card {
   flex-direction: column;
   gap: 1.2em;
 }
-[data-sdl-plugin="vertical-accordions"].va-mobile[data-card-layout="split"] .va-card__body {
+[data-sdl-plugin="vertical-accordions"].va-mobile[data-va-card-layout="split"] .va-card__body {
   align-self: stretch;
   max-width: none;
 }

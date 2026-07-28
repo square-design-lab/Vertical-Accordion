@@ -22,6 +22,8 @@
   "use strict";
 
   const PLUGIN_TITLE = "sdlVerticalAccordions";
+  const PLUGIN_VERSION = "1.0.6";
+  window.sdlVerticalAccordionVersion = PLUGIN_VERSION;
   const PLUGIN_SELECTOR = '[data-sdl-plugin="vertical-accordions"]';
   const MAX_PANELS = 12;
 
@@ -52,6 +54,9 @@
     // background it would otherwise inherit from is hidden behind the photo.
     overlayText: "light", // light | dark | custom | auto (follow the panel colour)
     overlayTextColor: "#ffffff",
+    // The site's own button colours are picked for the page background, not for
+    // a photograph, so they often disappear against one.
+    overlayButton: "solid", // theme | solid | outline
     showButton: true,
     buttonLabel: "Read more",
     buttonTarget: "_self",
@@ -889,9 +894,10 @@
       );
     }
 
+    const overImage = textSitsOnImage(item, settings);
     return (
       '<article class="va-card"' +
-      (textSitsOnImage(item, settings) ? ' data-over-image="true"' : "") +
+      (overImage ? ' data-over-image="true" data-over-button="' + escapeHtml(settings.overlayButton) + '"' : "") +
       ">" +
       media +
       '<div class="va-card__body">' + parts.filter(Boolean).join("") + "</div>" +
@@ -984,19 +990,23 @@
     set("--va-price-size", settings.priceSize);
     set("--va-icon-width", toLength(settings.iconSize, "24px"));
     set("--va-overlay-tint", String(toNumber(settings.overlayTint, 0) / 100));
-    set("--va-overlay-text", overlayTextColor(settings));
+    const overlay = overlayTextColor(settings);
+    set("--va-overlay-text", overlay);
+    // A solid button is filled with the overlay colour, so its label has to
+    // contrast with that fill — not with the panel behind the photo.
+    set("--va-overlay-on", overlay ? (isLight(overlay) ? "#111111" : "#ffffff") : "");
 
-    root.dataset.layout = settings.layout;
-    root.dataset.railSide = settings.railSide;
-    root.dataset.textDirection = settings.verticalTextDirection;
-    root.dataset.titleAlign = settings.titleAlign;
-    root.dataset.contentAlign = settings.contentAlign;
-    root.dataset.iconPlacement = settings.iconPlacement;
-    root.dataset.iconShape = settings.iconShape;
-    root.dataset.cardLayout = settings.cardLayout;
-    root.dataset.splitSide = settings.splitSide;
-    root.dataset.heightMode = settings.heightMode;
-    root.dataset.colorMode = settings.colorMode;
+    root.dataset.vaLayout = settings.layout;
+    root.dataset.vaRailSide = settings.railSide;
+    root.dataset.vaTextDirection = settings.verticalTextDirection;
+    root.dataset.vaTitleAlign = settings.titleAlign;
+    root.dataset.vaContentAlign = settings.contentAlign;
+    root.dataset.vaIconPlacement = settings.iconPlacement;
+    root.dataset.vaIconShape = settings.iconShape;
+    root.dataset.vaCardLayout = settings.cardLayout;
+    root.dataset.vaSplitSide = settings.splitSide;
+    root.dataset.vaHeightMode = settings.heightMode;
+    root.dataset.vaColorMode = settings.colorMode;
     root.classList.toggle("va-full-width", !!settings.fullWidth);
     root.classList.toggle("va-gapped", toNumber(settings.panelGap, 0) > 0);
 
@@ -1497,7 +1507,10 @@
     if (el.dataset.count) settings.panelLimit = parseAttr(el.dataset.count);
     if (el.dataset.open) settings.initialOpen = parseAttr(el.dataset.open);
 
-    // Any other data-* that matches a known setting name.
+    // Any other data-* that matches a known setting name. The presentational
+    // attributes the plugin writes back onto the mount live under data-va-*
+    // precisely so they can't be re-read here and outrank the author's settings
+    // the next time the accordion is built.
     Object.keys(DEFAULT_SETTINGS).forEach((key) => {
       if (key === "source") return;
       if (el.dataset[key] !== undefined) settings[key] = parseAttr(el.dataset[key]);

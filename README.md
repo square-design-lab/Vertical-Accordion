@@ -78,7 +78,9 @@ own panel's — otherwise a page-coloured box gets drawn around coloured panels.
 
 When the image fills the panel the words sit on top of it and cannot take their colour
 from the panel background, which is hidden. `overlayText` sets that colour
-(`light` / `dark` / `custom` / `auto`), and `overlayTint` darkens the photo behind it.
+(`light` / `dark` / `custom` / `auto`), `overlayTint` darkens the photo behind it, and
+`overlayButton` (`solid` / `outline` / `theme`) restyles the button, whose theme colours
+are chosen for the page background rather than for a photograph.
 
 ## Accessibility and markup
 
@@ -102,6 +104,14 @@ rather than its primary indexable copy.
 - Events: `sdlVerticalAccordions:ready` `:loaded` `:open` `:close`.
 - Each mount exposes `el.sdlVerticalAccordion` — `open(i)` `next()` `prev()` `refresh()` `destroy()`.
 - Maximum 12 panels.
+
+## Attributes the plugin writes
+
+Presentational state is written back onto the mount as `data-va-*` (`data-va-layout`,
+`data-va-card-layout`, `data-va-color-mode`, …). They exist for custom CSS to hook, and
+they are deliberately namespaced: plain `data-*` names matching a setting are read as
+author overrides, so unprefixed attributes would be re-read as settings on the next
+build and outrank the ones you set.
 
 ## Development
 
