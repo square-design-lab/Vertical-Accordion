@@ -1,0 +1,1850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SDL Vertical Accordion — Config Generator</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --panel:#fff; --ink:#16181d; --muted:#6b7280; --line:#e3e6ea;
+    --accent:#111; --accent-hover:#2b2f36; --accent-soft:#eef0f3; --radius:8px; --header-h:56px;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  body{margin:0;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg)}
+  button,input,select,textarea{font:inherit;color:inherit}
+
+  .app{display:grid;grid-template-columns:390px 1fr;height:100vh}
+  @media(max-width:960px){.app{grid-template-columns:1fr;height:auto}}
+
+  .side{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden}
+  .side-head{height:var(--header-h);padding:0 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:9px;flex:none}
+  .side-head h1{margin:0;font-size:15px;font-weight:650;letter-spacing:-.01em}
+  .badge{padding:2px 7px;border-radius:99px;background:var(--accent);color:#fff;font-size:11px;font-weight:600}
+  .side-body{overflow-y:auto;padding:6px 0 60px;flex:1}
+
+  .grp{border-bottom:1px solid var(--line)}
+  .grp-head{width:100%;display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border:0;background:none;font-weight:600;cursor:pointer;text-align:left}
+  .grp-head svg{transition:transform .18s;flex:none}
+  .grp.closed .grp-head svg{transform:rotate(-90deg)}
+  .grp-body{padding:2px 18px 18px;display:grid;gap:13px}
+  .grp.closed .grp-body{display:none}
+
+  .row{display:grid;gap:5px}
+  .row label{font-size:12.5px;font-weight:550;color:#3a3f47}
+  .row input[type=text],.row input[type=number],.row select,.row textarea{
+    width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:#fff}
+  .row input[type=color]{width:100%;height:34px;padding:2px;border:1px solid var(--line);border-radius:6px;background:#fff}
+  .row input:focus,.row select:focus,.row textarea:focus{outline:2px solid var(--accent);outline-offset:-1px}
+  .hint{font-size:11.5px;color:var(--muted)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .note{background:var(--accent-soft);border-radius:7px;padding:10px 12px;font-size:12.5px;color:#3a3f47}
+
+  .tog{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .tog label{font-size:13px;font-weight:500}
+  .sw{position:relative;width:38px;height:22px;flex:none}
+  .sw input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:1}
+  .sw span{position:absolute;inset:0;background:#d3d7dd;border-radius:99px;transition:.18s}
+  .sw span:after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:.18s}
+  .sw input:checked + span{background:var(--accent)}
+  .sw input:checked + span:after{transform:translateX(16px)}
+
+  /* layout presets */
+  .presets{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .preset{border:1px solid var(--line);border-radius:var(--radius);background:#fbfcfd;padding:8px 6px;cursor:pointer;display:grid;gap:6px;justify-items:center}
+  .preset:hover{border-color:#cfd6de}
+  .preset.on{border-color:var(--accent);background:#fff;box-shadow:0 0 0 1px var(--accent)}
+  .preset-art{width:100%;height:38px;border-radius:4px;display:flex;gap:2px;overflow:hidden}
+  .preset-art i{display:block;background:#c9ced6}
+  .preset span{font-size:11px;font-weight:600}
+
+  /* per-panel colour rows */
+  .glist{display:grid;gap:8px}
+  .cprow{display:grid;grid-template-columns:22px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) auto;gap:6px;align-items:center}
+  .cprow .idx{font-size:11px;font-weight:700;color:var(--muted);text-align:center}
+  .cprow input[type=color]{width:100%;height:30px;padding:2px;border:1px solid var(--line);border-radius:5px;background:#fff}
+  .cprow button{border:0;background:none;cursor:pointer;color:#aeb4bd;padding:4px;display:flex}
+  .cprow button:hover{color:#c62828}
+  .cphead{display:grid;grid-template-columns:22px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) auto;gap:6px;font-size:10.5px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+  .addbtn{padding:7px 12px;border:1px dashed var(--line);background:none;border-radius:6px;cursor:pointer;
+          color:var(--muted);font-size:12.5px;font-weight:550;width:100%}
+  .addbtn:hover{border-color:var(--accent);color:var(--ink)}
+
+  .main{display:flex;flex-direction:column;overflow:hidden}
+  .topbar{height:var(--header-h);padding:0 16px;border-bottom:1px solid var(--line);background:var(--panel);
+          display:flex;align-items:center;justify-content:space-between;gap:14px;flex:none}
+  .tabs{display:flex;gap:2px}
+  .tab{padding:7px 14px;border:0;background:none;cursor:pointer;border-radius:6px;font-weight:550;color:var(--muted)}
+  .tab.on{background:var(--accent-soft);color:var(--ink)}
+  .topbar-right{display:flex;align-items:center;gap:10px}
+  .devtog{background:#f2f2f2;padding:2px;border-radius:6px;display:flex}
+  .devtog button{border:0;background:transparent;padding:5px 11px;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;border-radius:4px;transition:.2s}
+  .devtog button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.1)}
+  .copy-btn{background:var(--accent);color:#fff;border:0;padding:9px 18px;border-radius:7px;font-weight:600;font-size:13px;
+            cursor:pointer;display:flex;align-items:center;gap:7px;transition:transform .1s,background .2s;box-shadow:0 1px 3px rgba(0,0,0,.18)}
+  .copy-btn:hover{background:var(--accent-hover)}
+  .copy-btn:active{transform:scale(.97)}
+  .copy-btn.copied{background:#0ea5e9}
+
+  .pane{flex:1;overflow:auto;padding:20px}
+  .pane[hidden]{display:none}
+
+  .urlbar{display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:7px 12px;background:#fff;
+          border:1px solid var(--line);border-radius:99px;font:12.5px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted)}
+  .urlbar b{color:var(--ink);font-weight:600}
+  .pv-note{font-size:12px;color:var(--muted);margin:0 0 12px}
+  .pv-wrap{background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .pv-scroll{position:relative;overflow:auto;padding:20px;max-height:calc(100vh - 210px)}
+  .pv-wrap.mobile{max-width:430px;margin:0 auto}
+
+  pre{margin:0 0 16px;padding:18px;background:#12141a;color:#e6e9ef;border-radius:10px;overflow:auto;
+      font:12.5px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;word-break:break-word}
+  .codelabel{font-size:12px;font-weight:650;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:0 0 7px}
+  .steps{background:#fff;border:1px solid var(--line);border-radius:10px;padding:20px;margin-bottom:16px}
+  .steps h3{margin:0 0 10px;font-size:14px}
+  .steps ol{margin:0;padding-left:20px}
+  .steps li{margin-bottom:7px}
+  .steps table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
+  .steps th,.steps td{text-align:left;border-bottom:1px solid var(--line);padding:6px 8px;vertical-align:top}
+  .steps th{color:var(--muted);font-weight:600}
+  code.inl{background:var(--accent-soft);padding:1px 5px;border-radius:4px;font-size:12.5px}
+
+  /* ---- preview host: gives the plugin CSS the site context it expects ---- */
+  #siteWrapper{color:#16181d;background:#fff;font-family:inherit}
+  /* Stands in for the site's content container so "break out to full width"
+     has something to break out of. The plugin's real rule uses 100vw, which
+     would escape this pane — here it breaks out to the pane instead. */
+  #siteWrapper .pv-container{max-width:78%;margin:0 auto}
+  #siteWrapper .pv-container > .va-full-width{
+    width:128.205%;max-width:none;margin-left:-14.103%;margin-right:-14.103%}
+  .pv-wrap.mobile #siteWrapper .pv-container{max-width:92%}
+  .pv-wrap.mobile #siteWrapper .pv-container > .va-full-width{
+    width:108.7%;margin-left:-4.35%;margin-right:-4.35%}
+  /* Preview-only stand-in for the site's themed button styles. */
+  #siteWrapper .sqs-block-button-element{
+    display:inline-block;padding:11px 22px;border-radius:99px;font-size:13px;font-weight:600;
+    text-decoration:none;border:1px solid currentColor;transition:.2s}
+  /* On a real site these inherit the theme's button styles. Here they're
+     approximated from the panel's own colours so contrast stays honest. */
+  #siteWrapper .sqs-button-element--primary{
+    background-color:var(--va-panel-color,#111);
+    border-color:var(--va-panel-color,#111);
+    color:var(--va-panel-background,#fff)}
+  #siteWrapper .sqs-button-element--secondary{background-color:transparent;color:inherit}
+  #siteWrapper .va-card__title{font-size:1.9em;line-height:1.15;font-weight:600;letter-spacing:-.02em}
+  #siteWrapper .va-card__excerpt{line-height:1.55}
+  #siteWrapper .pv-section{display:grid;place-items:center;padding:40px;gap:14px;text-align:center;min-height:100%}
+  #siteWrapper .pv-section h4{margin:0;font-size:1.5em}
+  #siteWrapper .pv-section p{margin:0;max-width:44ch;opacity:.8}
+  #siteWrapper .pv-section .pv-fake-block{width:100%;max-width:340px;aspect-ratio:16/9;border-radius:8px;background:currentColor;opacity:.14}
+</style>
+
+<!-- ==========================================================================
+     verticalAccordion.css — injected verbatim by build-generator.mjs so the
+     preview can never drift from the shipped stylesheet. Do not hand-edit.
+     ========================================================================== -->
+<style id="sdl-plugin-css">
+/* ==========================================================================
+   SDL Vertical Accordion v1.0
+   All presentation is driven by custom properties set on .vertical-accordions
+   by verticalAccordion.js. Structural variants come from data-* on the mount.
+   ========================================================================== */
+
+[data-sdl-plugin="vertical-accordions"] {
+  --va-min-panel-height: 30vh;
+  --va-max-panel-height: 80vh;
+  --va-fixed-height: 620px;
+  --va-transition-duration: 500ms;
+  --va-easing: ease;
+  --va-panel-gap: 0px;
+  --va-border-color: currentColor;
+  --va-border-width: 1px;
+  --va-border-radius: 0px;
+  --va-icon-width: 24px;
+  --va-content-padding: 40px;
+  --va-accordion-title-padding: 16px;
+  --va-overlay-tint: 0;
+
+  display: block;
+  position: relative;
+}
+
+[data-sdl-plugin="vertical-accordions"] *,
+[data-sdl-plugin="vertical-accordions"] *::before,
+[data-sdl-plugin="vertical-accordions"] *::after {
+  box-sizing: border-box;
+}
+
+/* Full-bleed breakout of the site container */
+[data-sdl-plugin="vertical-accordions"].va-full-width {
+  width: 100vw;
+  max-width: none;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}
+
+/* --------------------------------------------------------------------------
+   Component
+   -------------------------------------------------------------------------- */
+
+[data-sdl-plugin="vertical-accordions"] .vertical-accordions {
+  display: flex;
+  width: 100%;
+  gap: var(--va-panel-gap);
+  position: relative;
+}
+
+/* Ungapped accordions read as one object: the border and radius live on the
+   wrapper. Gapped ones are separate cards, so each panel carries its own. */
+[data-sdl-plugin="vertical-accordions"]:not(.va-gapped) .vertical-accordions {
+  border: var(--va-border-width) solid var(--va-border-color);
+  border-radius: var(--va-border-radius);
+  overflow: hidden;
+}
+
+[data-sdl-plugin="vertical-accordions"].va-gapped .accordion-panel {
+  border: var(--va-border-width) solid var(--va-border-color);
+  border-radius: var(--va-border-radius);
+}
+
+[data-sdl-plugin="vertical-accordions"]:not(.va-gapped)
+  .accordion-panel:not(:first-child) {
+  border-left: var(--va-border-width) solid var(--va-border-color);
+}
+
+/* --------------------------------------------------------------------------
+   Panel
+   -------------------------------------------------------------------------- */
+
+[data-sdl-plugin="vertical-accordions"] .accordion-panel {
+  display: flex;
+  flex-direction: row;
+  flex: 0 0 auto;
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  background-color: var(--va-panel-background, transparent);
+  color: var(--va-panel-color, inherit);
+  transition: background-color var(--va-transition-duration) var(--va-easing);
+}
+
+[data-sdl-plugin="vertical-accordions"][data-rail-side="right"] .accordion-panel {
+  flex-direction: row-reverse;
+}
+
+[data-sdl-plugin="vertical-accordions"][data-height-mode="content"] .accordion-panel {
+  height: clamp(
+    var(--va-min-panel-height),
+    var(--va-tallest-panel-height, var(--va-min-panel-height)),
+    var(--va-max-panel-height)
+  );
+  min-height: var(--va-min-panel-height);
+}
+
+[data-sdl-plugin="vertical-accordions"][data-height-mode="fixed"] .accordion-panel {
+  height: var(--va-fixed-height);
+}
+
+/* No panel open — the rails share the width evenly. */
+[data-sdl-plugin="vertical-accordions"].va-none-active .accordion-panel {
+  flex: 1 1 0;
+}
+[data-sdl-plugin="vertical-accordions"].va-none-active .accordion-title {
+  flex: 1 1 auto;
+  width: auto !important;
+}
+
+/* --------------------------------------------------------------------------
+   Rail (the always-visible title button)
+   -------------------------------------------------------------------------- */
+
+[data-sdl-plugin="vertical-accordions"] .accordion-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  flex: 0 0 auto;
+  padding: var(--va-accordion-title-padding);
+  margin: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  overflow: hidden;
+  text-align: center;
+  transition: background-color var(--va-transition-duration) var(--va-easing);
+}
+
+[data-sdl-plugin="vertical-accordions"] .accordion-title:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -5px;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-rail__num {
+  flex: none;
+  font-size: var(--va-number-size, 1.1em);
+  font-weight: 600;
+  line-height: 1;
+  opacity: 0.85;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-sdl-plugin="vertical-accordions"] .accordion-title .text {
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  min-height: 0;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  color: var(--va-accordion-title-color, inherit);
+  font-family: var(--va-accordion-title-font-family, inherit);
+  font-size: var(--va-accordion-title-size, inherit);
+  text-transform: var(--va-accordion-title-text-transform, inherit);
+  letter-spacing: var(--va-accordion-title-letter-spacing, inherit);
+}
+
+[data-sdl-plugin="vertical-accordions"][data-title-align="start"] .accordion-title .text {
+  align-items: flex-start;
+}
+[data-sdl-plugin="vertical-accordions"][data-title-align="center"] .accordion-title .text {
+  align-items: center;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-rail__label {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-height: 100%;
+}
+
+/* Both reference builds read bottom-to-top. */
+[data-sdl-plugin="vertical-accordions"][data-text-direction="up"] .va-rail__label {
+  transform: rotate(180deg);
+}
+
+/* --------------------------------------------------------------------------
+   Icon
+   -------------------------------------------------------------------------- */
+
+[data-sdl-plugin="vertical-accordions"] .icon-wrapper {
+  flex: none;
+  display: grid;
+  place-items: center;
+  color: var(--va-accordion-title-color, inherit);
+}
+
+[data-sdl-plugin="vertical-accordions"][data-icon-placement="top"] .icon-wrapper {
+  order: -1;
+}
+[data-sdl-plugin="vertical-accordions"][data-icon-placement="top"] .va-rail__num {
+  order: -2;
+}
+
+[data-sdl-plugin="vertical-accordions"][data-icon-shape="circle"] .icon-wrapper,
+[data-sdl-plugin="vertical-accordions"][data-icon-shape="square"] .icon-wrapper {
+  padding: calc(var(--va-icon-width) * 0.42);
+  border: 1px solid currentColor;
+}
+[data-sdl-plugin="vertical-accordions"][data-icon-shape="circle"] .icon-wrapper {
+  border-radius: 50%;
+}
+[data-sdl-plugin="vertical-accordions"][data-icon-shape="square"] .icon-wrapper {
+  border-radius: 4px;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-icon--svg {
+  width: var(--va-icon-width);
+  height: var(--va-icon-width);
+  display: block;
+  transition: transform var(--va-transition-duration) var(--va-easing);
+}
+
+[data-sdl-plugin="vertical-accordions"] .panel-active .va-icon--svg {
+  transform: rotate(90deg);
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-icon--plus {
+  position: relative;
+  display: block;
+  width: var(--va-icon-width);
+  height: var(--va-icon-width);
+}
+[data-sdl-plugin="vertical-accordions"] .va-icon__h,
+[data-sdl-plugin="vertical-accordions"] .va-icon__v {
+  position: absolute;
+  background: currentColor;
+  transition: transform var(--va-transition-duration) var(--va-easing);
+}
+[data-sdl-plugin="vertical-accordions"] .va-icon__h {
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 1.5px;
+  transform: translateY(-50%);
+}
+[data-sdl-plugin="vertical-accordions"] .va-icon__v {
+  left: 50%;
+  top: 0;
+  width: 1.5px;
+  height: 100%;
+  transform: translateX(-50%);
+}
+[data-sdl-plugin="vertical-accordions"] .panel-active .va-icon__v {
+  transform: translateX(-50%) scaleY(0);
+}
+
+/* --------------------------------------------------------------------------
+   Content
+   -------------------------------------------------------------------------- */
+
+[data-sdl-plugin="vertical-accordions"] .accordion-content-wrapper {
+  flex: 0 0 auto;
+  width: 0;
+  overflow: hidden;
+  transition: width var(--va-transition-duration) var(--va-easing);
+}
+
+[data-sdl-plugin="vertical-accordions"] .panel-active .accordion-content-wrapper {
+  width: var(--va-active-width, 0px);
+}
+
+[data-sdl-plugin="vertical-accordions"] .accordion-content {
+  width: var(--va-active-width, 0px);
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   Field card (every collection except portfolio)
+   -------------------------------------------------------------------------- */
+
+[data-sdl-plugin="vertical-accordions"] .va-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding: var(--va-content-padding);
+  gap: 1.2em;
+}
+
+[data-sdl-plugin="vertical-accordions"][data-content-align="top"] .va-card {
+  justify-content: flex-start;
+}
+[data-sdl-plugin="vertical-accordions"][data-content-align="center"] .va-card {
+  justify-content: center;
+}
+[data-sdl-plugin="vertical-accordions"][data-content-align="bottom"] .va-card {
+  justify-content: flex-end;
+}
+
+/* The image is an absolutely-filled frame rather than an in-flow block. A
+   percentage-height image inside an auto-height card has no resolvable size,
+   which makes the "grow to fit the content" measurement oscillate. */
+[data-sdl-plugin="vertical-accordions"] .va-card__media {
+  position: relative;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-card__media img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* cover — the image becomes the panel background and the text sits on top */
+[data-sdl-plugin="vertical-accordions"] .va-card__media[data-fit="cover"] {
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+}
+[data-sdl-plugin="vertical-accordions"] .va-card__media[data-fit="cover"] img {
+  object-fit: cover;
+}
+
+/* contain — takes the leftover height in a fixed-height panel, and exactly the
+   set height when the panel grows to fit its content. */
+[data-sdl-plugin="vertical-accordions"] .va-card__media[data-fit="contain"] {
+  flex: 1 1 auto;
+  min-height: var(--va-media-height, 240px);
+}
+[data-sdl-plugin="vertical-accordions"] .va-card__media[data-fit="inline"] {
+  flex: 0 0 auto;
+  height: var(--va-media-height, 200px);
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-card__tint {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: var(--va-overlay-tint, 0);
+  pointer-events: none;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-card__body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.7em;
+  flex: 0 0 auto;
+  max-width: 62ch;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-card__num {
+  font-size: var(--va-number-size, 1.1em);
+  font-weight: 600;
+  line-height: 1;
+  opacity: 0.85;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-card__title {
+  margin: 0;
+  color: inherit;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-card__excerpt {
+  margin: 0;
+  font-size: var(--va-excerpt-size, inherit);
+  opacity: 0.88;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-card__link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-card__btn {
+  display: inline-block;
+  text-decoration: none;
+}
+
+/* --------------------------------------------------------------------------
+   Injected page sections (portfolio)
+   -------------------------------------------------------------------------- */
+
+[data-sdl-plugin="vertical-accordions"] #sections {
+  display: grid;
+  min-height: 100%;
+}
+
+[data-sdl-plugin="vertical-accordions"] #sections > section:first-child {
+  padding-top: 0;
+}
+
+[data-sdl-plugin="vertical-accordions"] .accordion-content > [data-type="item"] {
+  padding: 3.3vmax;
+}
+
+[data-sdl-plugin="vertical-accordions"] .accordion-content > [data-type="item"] .sqs-block {
+  box-sizing: border-box;
+  padding: 17px;
+}
+
+/* Classic editor blocks inside a fluid-engine section */
+[data-sdl-plugin="vertical-accordions"] .sqs-block-image .design-layout-fluid img {
+  height: auto;
+}
+
+#siteWrapper
+  [data-fluid-engine="true"]
+  [data-sdl-plugin="vertical-accordions"]
+  .content-wrapper:has(.sqs-layout) {
+  padding: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Per-panel colours (1–12)
+   -------------------------------------------------------------------------- */
+
+[data-sdl-plugin="vertical-accordions"] .accordion-panel:nth-of-type(1) {
+  --va-panel-background: var(--va-panel-1-background);
+  --va-panel-color: var(--va-panel-1-color);
+  --va-panel-hover: var(--va-panel-hover-1-background, var(--va-panel-1-background));
+}
+[data-sdl-plugin="vertical-accordions"] .accordion-panel:nth-of-type(2) {
+  --va-panel-background: var(--va-panel-2-background);
+  --va-panel-color: var(--va-panel-2-color);
+  --va-panel-hover: var(--va-panel-hover-2-background, var(--va-panel-2-background));
+}
+[data-sdl-plugin="vertical-accordions"] .accordion-panel:nth-of-type(3) {
+  --va-panel-background: var(--va-panel-3-background);
+  --va-panel-color: var(--va-panel-3-color);
+  --va-panel-hover: var(--va-panel-hover-3-background, var(--va-panel-3-background));
+}
+[data-sdl-plugin="vertical-accordions"] .accordion-panel:nth-of-type(4) {
+  --va-panel-background: var(--va-panel-4-background);
+  --va-panel-color: var(--va-panel-4-color);
+  --va-panel-hover: var(--va-panel-hover-4-background, var(--va-panel-4-background));
+}
+[data-sdl-plugin="vertical-accordions"] .accordion-panel:nth-of-type(5) {
+  --va-panel-background: var(--va-panel-5-background);
+  --va-panel-color: var(--va-panel-5-color);
+  --va-panel-hover: var(--va-panel-hover-5-background, var(--va-panel-5-background));
+}
+[data-sdl-plugin="vertical-accordions"] .accordion-panel:nth-of-type(6) {
+  --va-panel-background: var(--va-panel-6-background);
+  --va-panel-color: var(--va-panel-6-color);
+  --va-panel-hover: var(--va-panel-hover-6-background, var(--va-panel-6-background));
+}
+[data-sdl-plugin="vertical-accordions"] .accordion-panel:nth-of-type(7) {
+  --va-panel-background: var(--va-panel-7-background);
+  --va-panel-color: var(--va-panel-7-color);
+  --va-panel-hover: var(--va-panel-hover-7-background, var(--va-panel-7-background));
+}
+[data-sdl-plugin="vertical-accordions"] .accordion-panel:nth-of-type(8) {
+  --va-panel-background: var(--va-panel-8-background);
+  --va-panel-color: var(--va-panel-8-color);
+  --va-panel-hover: var(--va-panel-hover-8-background, var(--va-panel-8-background));
+}
+[data-sdl-plugin="vertical-accordions"] .accordion-panel:nth-of-type(9) {
+  --va-panel-background: var(--va-panel-9-background);
+  --va-panel-color: var(--va-panel-9-color);
+  --va-panel-hover: var(--va-panel-hover-9-background, var(--va-panel-9-background));
+}
+[data-sdl-plugin="vertical-accordions"] .accordion-panel:nth-of-type(10) {
+  --va-panel-background: var(--va-panel-10-background);
+  --va-panel-color: var(--va-panel-10-color);
+  --va-panel-hover: var(--va-panel-hover-10-background, var(--va-panel-10-background));
+}
+[data-sdl-plugin="vertical-accordions"] .accordion-panel:nth-of-type(11) {
+  --va-panel-background: var(--va-panel-11-background);
+  --va-panel-color: var(--va-panel-11-color);
+  --va-panel-hover: var(--va-panel-hover-11-background, var(--va-panel-11-background));
+}
+[data-sdl-plugin="vertical-accordions"] .accordion-panel:nth-of-type(12) {
+  --va-panel-background: var(--va-panel-12-background);
+  --va-panel-color: var(--va-panel-12-color);
+  --va-panel-hover: var(--va-panel-hover-12-background, var(--va-panel-12-background));
+}
+
+#siteWrapper
+  [data-sdl-plugin="vertical-accordions"]
+  .accordion-panel:not(.panel-active):hover {
+  background-color: var(--va-panel-hover, var(--va-panel-background, transparent));
+}
+
+/* --------------------------------------------------------------------------
+   Mobile — stacked accordion (class is toggled by JS at the configured
+   breakpoint, so the breakpoint stays a setting rather than a media query)
+   -------------------------------------------------------------------------- */
+
+[data-sdl-plugin="vertical-accordions"].va-mobile .vertical-accordions {
+  flex-direction: column;
+}
+
+[data-sdl-plugin="vertical-accordions"].va-mobile .accordion-panel {
+  flex-direction: column;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+}
+
+[data-sdl-plugin="vertical-accordions"].va-mobile.va-none-active .accordion-panel {
+  flex: 0 0 auto;
+}
+
+[data-sdl-plugin="vertical-accordions"]:not(.va-gapped).va-mobile
+  .accordion-panel:not(:first-child) {
+  border-left: 0;
+  border-top: var(--va-border-width) solid var(--va-border-color);
+}
+
+[data-sdl-plugin="vertical-accordions"].va-mobile .accordion-title {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100% !important;
+  gap: 12px;
+  text-align: left;
+}
+
+[data-sdl-plugin="vertical-accordions"].va-mobile .accordion-title .text {
+  align-items: center;
+  justify-content: flex-start;
+  flex: 1 1 auto;
+}
+
+[data-sdl-plugin="vertical-accordions"].va-mobile .va-rail__label {
+  writing-mode: horizontal-tb;
+  transform: none;
+  white-space: normal;
+  text-overflow: clip;
+  max-height: none;
+}
+
+[data-sdl-plugin="vertical-accordions"].va-mobile .icon-wrapper {
+  order: 0;
+  margin-left: auto;
+}
+[data-sdl-plugin="vertical-accordions"].va-mobile .va-rail__num {
+  order: -1;
+}
+
+[data-sdl-plugin="vertical-accordions"].va-mobile .panel-active .va-icon--svg {
+  transform: rotate(180deg);
+}
+
+[data-sdl-plugin="vertical-accordions"].va-mobile .accordion-content-wrapper {
+  width: 100% !important;
+  max-height: 0;
+  transition: max-height var(--va-transition-duration) var(--va-easing);
+}
+
+[data-sdl-plugin="vertical-accordions"].va-mobile
+  .panel-active
+  .accordion-content-wrapper {
+  max-height: calc(var(--va-active-height, 60vh) + 2px);
+}
+
+[data-sdl-plugin="vertical-accordions"].va-mobile .accordion-content {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+[data-sdl-plugin="vertical-accordions"].va-mobile .va-card {
+  min-height: 0;
+  padding: max(20px, calc(var(--va-content-padding) * 0.6));
+}
+
+[data-sdl-plugin="vertical-accordions"].va-mobile .va-card__media[data-fit="cover"] {
+  position: relative;
+  inset: auto;
+  height: 220px;
+  order: -1;
+}
+[data-sdl-plugin="vertical-accordions"].va-mobile .va-card__media[data-fit="contain"],
+[data-sdl-plugin="vertical-accordions"].va-mobile .va-card__media[data-fit="inline"] {
+  flex: 0 0 auto;
+  height: min(var(--va-media-height, 200px), 220px);
+  min-height: 0;
+}
+
+[data-sdl-plugin="vertical-accordions"].va-mobile .va-card__body {
+  max-width: none;
+}
+
+[data-sdl-plugin="vertical-accordions"].va-mobile #sections {
+  max-height: none;
+}
+
+/* --------------------------------------------------------------------------
+   Reduced motion
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  [data-sdl-plugin="vertical-accordions"] .accordion-content-wrapper,
+  [data-sdl-plugin="vertical-accordions"] .accordion-panel,
+  [data-sdl-plugin="vertical-accordions"] .va-icon--svg,
+  [data-sdl-plugin="vertical-accordions"] .va-icon__h,
+  [data-sdl-plugin="vertical-accordions"] .va-icon__v {
+    transition-duration: 1ms !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Squarespace editor placeholder
+   -------------------------------------------------------------------------- */
+
+.sqs-edit-mode-active .code-block [data-sdl-plugin="vertical-accordions"] {
+  color: transparent;
+  background: transparent;
+  font-size: 0;
+  position: absolute;
+  line-height: 0;
+  width: 100%;
+  height: 25px;
+  border: 1px dashed var(--headingLargeColor);
+}
+
+.sqs-edit-mode-active .code-block [data-sdl-plugin="vertical-accordions"]::after {
+  content: "Vertical Accordion";
+  color: var(--headingLargeColor);
+  font-size: 12px;
+  position: absolute;
+  top: 50%;
+  transform: translateX(25%);
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="side">
+    <div class="side-head">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="5" height="16" rx="1"/><line x1="12" y1="4" x2="12" y2="20"/><line x1="17" y1="4" x2="17" y2="20"/><line x1="21.5" y1="4" x2="21.5" y2="20"/></svg>
+      <h1>Vertical Accordion</h1><span class="badge">v1.0</span>
+    </div>
+    <div class="side-body">
+
+      <!-- CONTENT SOURCE -->
+      <section class="grp" data-g>
+        <button class="grp-head" onclick="tog(this)">Content Source
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <div class="grp-body">
+          <div class="row">
+            <label>Collection URL</label>
+            <input type="text" id="source" value="/portfolio" oninput="sync()">
+            <div class="hint">The page slug of a blog, portfolio, events or products collection. Add <code class="inl">?featured</code> to use starred items only.</div>
+          </div>
+          <div class="row">
+            <label>How many panels</label>
+            <input type="number" id="panelLimit" value="5" min="1" max="12" oninput="sync()">
+            <div class="hint">12 is the maximum — rails get unreadable past that.</div>
+          </div>
+          <div class="row">
+            <label>Panel content</label>
+            <select id="contentMode" onchange="sync()">
+              <option value="auto">Automatic (recommended)</option>
+              <option value="fields">Item fields — title, excerpt, image, button</option>
+              <option value="sections">Full page sections</option>
+            </select>
+            <div class="hint">Automatic renders <b>portfolio</b> collections as their full page sections, and everything else as a card built from the item fields.</div>
+          </div>
+          <div class="row">
+            <label>Rail title comes from</label>
+            <select id="titleSource" onchange="sync()">
+              <option value="title">Item title</option>
+              <option value="categories">Item categories</option>
+              <option value="custom">Custom list</option>
+            </select>
+          </div>
+          <div class="row" id="rowCustomTitles" hidden>
+            <label>Custom titles</label>
+            <input type="text" id="customTitles" placeholder="Discover, Design, Build, Launch" oninput="sync()">
+            <div class="hint">Comma-separated, in panel order. Blanks fall back to the item title.</div>
+          </div>
+          <div class="row">
+            <label>Title tag</label>
+            <select id="titleTag" onchange="sync()">
+              <option>h2</option><option selected>h3</option><option>h4</option><option>h5</option><option>div</option>
+            </select>
+          </div>
+          <div class="tog"><label>Reverse the order</label>
+            <span class="sw"><input type="checkbox" id="reverseOrder" onchange="sync()"><span></span></span></div>
+        </div>
+      </section>
+
+      <!-- PANEL CONTENT -->
+      <section class="grp closed" data-g>
+        <button class="grp-head" onclick="tog(this)">Panel Content
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <div class="grp-body">
+          <div class="note" id="fieldsNote">These control the card built from item fields. They're ignored for panels rendering full page sections.</div>
+          <div class="row">
+            <label>Numbering</label>
+            <select id="showNumber" onchange="sync()">
+              <option value="none">None</option>
+              <option value="pad">01, 02, 03</option>
+              <option value="plain">1, 2, 3</option>
+              <option value="roman">I., II., III.</option>
+            </select>
+          </div>
+          <div class="tog"><label>Show the number on the rail</label>
+            <span class="sw"><input type="checkbox" id="showNumberInRail" checked onchange="sync()"><span></span></span></div>
+          <div class="tog"><label>Title inside the open panel</label>
+            <span class="sw"><input type="checkbox" id="showTitleInPanel" checked onchange="sync()"><span></span></span></div>
+          <div class="tog"><label>Excerpt</label>
+            <span class="sw"><input type="checkbox" id="showExcerpt" checked onchange="sync()"><span></span></span></div>
+          <div class="row" id="rowExcerptLength">
+            <label>Trim the excerpt to (characters)</label>
+            <input type="number" id="excerptLength" value="240" min="0" oninput="sync()">
+            <div class="hint">0 keeps the whole thing.</div>
+          </div>
+          <div class="tog"><label>Image</label>
+            <span class="sw"><input type="checkbox" id="showImage" checked onchange="sync()"><span></span></span></div>
+          <div class="row" id="rowImageFit">
+            <label>Image behaviour</label>
+            <select id="imageFit" onchange="sync()">
+              <option value="cover">Fills the panel, text on top</option>
+              <option value="contain">Fits above the text</option>
+              <option value="inline">Small band above the text</option>
+            </select>
+          </div>
+          <div class="row" id="rowMediaHeight">
+            <label>Image height (px)</label>
+            <input type="number" id="mediaHeight" value="240" min="40" oninput="sync()">
+            <div class="hint">Used when the image fits above the text or sits in a band. In a fixed-height panel a fitted image grows past this to fill the space.</div>
+          </div>
+          <div class="row" id="rowTint">
+            <label>Darken behind the text (%)</label>
+            <input type="number" id="overlayTint" value="0" min="0" max="90" oninput="sync()">
+            <div class="hint">Only applies when the image fills the panel.</div>
+          </div>
+          <div class="tog"><label>Button</label>
+            <span class="sw"><input type="checkbox" id="showButton" checked onchange="sync()"><span></span></span></div>
+          <div id="btnArea" style="display:grid;gap:13px">
+            <div class="row"><label>Button label</label>
+              <input type="text" id="buttonLabel" value="Read more" oninput="sync()"></div>
+            <div class="two">
+              <div class="row"><label>Style</label>
+                <select id="buttonStyle" onchange="sync()">
+                  <option value="primary">Primary</option><option value="secondary">Secondary</option><option value="link">Text link</option>
+                </select></div>
+              <div class="row"><label>Opens in</label>
+                <select id="buttonTarget" onchange="sync()">
+                  <option value="_self">Same tab</option><option value="_blank">New tab</option>
+                </select></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- LAYOUT -->
+      <section class="grp closed" data-g>
+        <button class="grp-head" onclick="tog(this)">Layout &amp; Size
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <div class="grp-body">
+          <div class="row">
+            <label>Start from a preset</label>
+            <div class="presets">
+              <button class="preset" data-preset="rails" onclick="applyPreset('rails')">
+                <span class="preset-art" style="gap:2px">
+                  <i style="flex:5;border-radius:3px;background:#1d3b30"></i><i style="flex:1;border-radius:3px;background:#2f6350"></i><i style="flex:1;border-radius:3px;background:#8d9d92"></i><i style="flex:1;border-radius:3px;background:#f26522"></i>
+                </span><span>Rails</span></button>
+              <button class="preset" data-preset="fullbleed" onclick="applyPreset('fullbleed')">
+                <span class="preset-art">
+                  <i style="flex:5;background:#111"></i><i style="flex:1;background:#e2e2e2"></i><i style="flex:1;background:#cacaca"></i><i style="flex:1;background:#b2b2b2"></i>
+                </span><span>Full bleed</span></button>
+              <button class="preset" data-preset="minimal" onclick="applyPreset('minimal')">
+                <span class="preset-art" style="border:1px solid #d5d9de">
+                  <i style="flex:5;background:#fff"></i><i style="flex:1;background:#fff;border-left:1px solid #d5d9de"></i><i style="flex:1;background:#fff;border-left:1px solid #d5d9de"></i><i style="flex:1;background:#fff;border-left:1px solid #d5d9de"></i>
+                </span><span>Minimal</span></button>
+            </div>
+            <div class="hint">A preset just fills in the fields below — tweak anything afterwards.</div>
+          </div>
+
+          <div class="row">
+            <label>Panel height</label>
+            <select id="heightMode" onchange="sync()">
+              <option value="content">Grows to fit the tallest panel</option>
+              <option value="fixed">Fixed</option>
+            </select>
+          </div>
+          <div class="row" id="rowFixedHeight" hidden>
+            <label>Height</label>
+            <input type="text" id="fixedHeight" value="620px" oninput="sync()">
+            <div class="hint">Any CSS length — <code class="inl">620px</code>, <code class="inl">80vh</code>, <code class="inl">100vh</code>.</div>
+          </div>
+          <div class="two" id="rowMinMax">
+            <div class="row"><label>Minimum height</label><input type="text" id="minPanelHeight" value="30vh" oninput="sync()"></div>
+            <div class="row"><label>Maximum height</label><input type="text" id="maxPanelHeight" value="80vh" oninput="sync()"></div>
+          </div>
+
+          <div class="row">
+            <label>Rail width</label>
+            <select id="railWidthMode" onchange="sync()">
+              <option value="equal">Equal — matched to the longest title</option>
+              <option value="auto">Automatic — each rail fits its own title</option>
+              <option value="fixed">Fixed</option>
+            </select>
+          </div>
+          <div class="row" id="rowRailWidth" hidden>
+            <label>Rail width (px)</label>
+            <input type="number" id="railWidthPx" value="72" min="24" oninput="sync()">
+            <div class="hint">Long titles are trimmed with an ellipsis if they don't fit.</div>
+          </div>
+
+          <div class="two">
+            <div class="row"><label>Gap between panels (px)</label><input type="number" id="panelGap" value="0" min="0" oninput="sync()"></div>
+            <div class="row"><label>Corner radius (px)</label><input type="number" id="borderRadius" value="0" min="0" oninput="sync()"></div>
+          </div>
+          <div class="two">
+            <div class="row"><label>Border width (px)</label><input type="number" id="borderWidth" value="1" min="0" oninput="sync()"></div>
+            <div class="row"><label>Border colour</label><input type="color" id="borderColor" value="#111111" oninput="sync()"></div>
+          </div>
+          <div class="tog"><label>Use the theme's text colour for the border</label>
+            <span class="sw"><input type="checkbox" id="borderInherit" checked onchange="sync()"><span></span></span></div>
+
+          <div class="row"><label>Padding inside the open panel (px)</label>
+            <input type="number" id="contentPadding" value="40" min="0" oninput="sync()"></div>
+
+          <div class="row">
+            <label>Rail sits on the</label>
+            <select id="railSide" onchange="sync()">
+              <option value="left">Left of its panel</option>
+              <option value="right">Right of its panel</option>
+            </select>
+          </div>
+          <div class="row">
+            <label>Vertical title reads</label>
+            <select id="verticalTextDirection" onchange="sync()">
+              <option value="up">Bottom to top</option>
+              <option value="down">Top to bottom</option>
+            </select>
+          </div>
+          <div class="row">
+            <label>Title sits at the</label>
+            <select id="titleAlign" onchange="sync()">
+              <option value="end">Bottom of the rail</option>
+              <option value="center">Middle of the rail</option>
+              <option value="start">Top of the rail</option>
+            </select>
+          </div>
+          <div class="row">
+            <label>Panel content sits at the</label>
+            <select id="contentAlign" onchange="sync()">
+              <option value="bottom">Bottom</option><option value="center">Middle</option><option value="top">Top</option>
+            </select>
+          </div>
+          <div class="tog"><label>Break out to full browser width</label>
+            <span class="sw"><input type="checkbox" id="fullWidth" onchange="sync()"><span></span></span></div>
+        </div>
+      </section>
+
+      <!-- COLOURS -->
+      <section class="grp closed" data-g>
+        <button class="grp-head" onclick="tog(this)">Panel Colours
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <div class="grp-body">
+          <div class="row">
+            <label>Colour mode</label>
+            <select id="colorMode" onchange="sync()">
+              <option value="theme">Inherit the section theme</option>
+              <option value="ramp">Blend between two colours</option>
+              <option value="custom">Pick each panel</option>
+            </select>
+          </div>
+          <div class="two" id="rowRamp" hidden>
+            <div class="row"><label>First panel</label><input type="color" id="rampFrom" value="#f2f2f2" oninput="sync()"></div>
+            <div class="row"><label>Last panel</label><input type="color" id="rampTo" value="#111111" oninput="sync()"></div>
+          </div>
+          <div class="hint" id="rampHint" hidden>Text colour is chosen automatically for contrast on each step.</div>
+          <div id="customArea" hidden style="display:grid;gap:8px">
+            <div class="cphead"><span></span><span>Background</span><span>Hover</span><span>Text</span><span></span></div>
+            <div class="glist" id="colorList"></div>
+            <button class="addbtn" onclick="addColorRow()">+ Add a panel colour</button>
+            <div class="hint">Rows map to panels in order. Panels past the last row inherit the section theme.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TITLES & ICONS -->
+      <section class="grp closed" data-g>
+        <button class="grp-head" onclick="tog(this)">Titles &amp; Icons
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <div class="grp-body">
+          <div class="tog"><label>Use the theme's title colour</label>
+            <span class="sw"><input type="checkbox" id="titleColorInherit" checked onchange="sync()"><span></span></span></div>
+          <div class="row" id="rowTitleColor" hidden><label>Title colour</label>
+            <input type="color" id="titleColor" value="#111111" oninput="sync()"></div>
+          <div class="two">
+            <div class="row"><label>Title size</label><input type="text" id="titleSize" placeholder="1rem" oninput="sync()"></div>
+            <div class="row"><label>Letter spacing</label><input type="text" id="titleLetterSpacing" placeholder="0.02em" oninput="sync()"></div>
+          </div>
+          <div class="two">
+            <div class="row"><label>Text transform</label>
+              <select id="titleTextTransform" onchange="sync()">
+                <option value="">Inherit</option><option value="none">None</option>
+                <option value="uppercase">UPPERCASE</option><option value="capitalize">Capitalize</option>
+              </select></div>
+            <div class="row"><label>Rail padding (px)</label><input type="number" id="titlePadding" value="16" min="0" oninput="sync()"></div>
+          </div>
+          <div class="row"><label>Font family</label>
+            <input type="text" id="titleFontFamily" placeholder="inherit" oninput="sync()">
+            <div class="hint">Leave blank to use the site's heading font.</div></div>
+          <div class="two">
+            <div class="row"><label>Number size</label><input type="text" id="numberSize" placeholder="1.1em" oninput="sync()"></div>
+            <div class="row"><label>Excerpt size</label><input type="text" id="excerptSize" placeholder="1rem" oninput="sync()"></div>
+          </div>
+
+          <div class="row">
+            <label>Icon</label>
+            <select id="iconStyle" onchange="sync()">
+              <option value="plus">Plus / minus</option>
+              <option value="arrow">Arrow</option>
+              <option value="chevron">Chevron</option>
+              <option value="none">None</option>
+              <option value="custom">Custom SVG</option>
+            </select>
+          </div>
+          <div class="row" id="rowCustomIcon" hidden>
+            <label>Custom SVG</label>
+            <textarea id="icon" rows="3" placeholder="&lt;svg …&gt;&lt;/svg&gt;" oninput="sync()"></textarea>
+            <div class="hint">Add <code class="inl">class="va-icon va-icon--svg"</code> so it picks up the size and rotation.</div>
+          </div>
+          <div class="two" id="rowIconOpts">
+            <div class="row"><label>Position</label>
+              <select id="iconPlacement" onchange="sync()"><option value="bottom">Bottom</option><option value="top">Top</option></select></div>
+            <div class="row"><label>Frame</label>
+              <select id="iconShape" onchange="sync()"><option value="bare">None</option><option value="circle">Circle</option><option value="square">Square</option></select></div>
+          </div>
+          <div class="row" id="rowIconSize"><label>Icon size (px)</label>
+            <input type="number" id="iconSize" value="24" min="8" oninput="sync()"></div>
+        </div>
+      </section>
+
+      <!-- BEHAVIOUR -->
+      <section class="grp closed" data-g>
+        <button class="grp-head" onclick="tog(this)">Behaviour
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <div class="grp-body">
+          <div class="row"><label>Open on load (panel number)</label>
+            <input type="number" id="initialOpen" value="1" min="1" oninput="sync()">
+            <div class="hint">A <code class="inl">?va-active=3</code> link overrides this, so you can deep-link a panel.</div></div>
+          <div class="row">
+            <label>Opens on</label>
+            <select id="trigger" onchange="sync()">
+              <option value="click">Click</option><option value="hover">Hover</option><option value="both">Click or hover</option>
+            </select>
+            <div class="hint">Hover falls back to tap on touch devices.</div>
+          </div>
+          <div class="tog"><label>Clicking the open panel closes it</label>
+            <span class="sw"><input type="checkbox" id="allowAllClosed" onchange="sync()"><span></span></span></div>
+          <div class="tog"><label>Cycle through panels automatically</label>
+            <span class="sw"><input type="checkbox" id="autoplay" onchange="sync()"><span></span></span></div>
+          <div id="autoArea" hidden style="display:grid;gap:13px">
+            <div class="row"><label>Seconds per panel</label>
+              <input type="number" id="autoplaySeconds" value="5" min="1.2" step="0.1" oninput="sync()"></div>
+            <div class="tog"><label>Pause on hover</label>
+              <span class="sw"><input type="checkbox" id="pauseOnHover" checked onchange="sync()"><span></span></span></div>
+          </div>
+          <div class="tog"><label>Wrap around at the ends</label>
+            <span class="sw"><input type="checkbox" id="loop" checked onchange="sync()"><span></span></span></div>
+          <div class="two">
+            <div class="row"><label>Transition (ms)</label><input type="number" id="transitionDuration" value="500" min="0" oninput="sync()"></div>
+            <div class="row"><label>Easing</label>
+              <select id="easing" onchange="sync()">
+                <option value="ease">Ease</option>
+                <option value="cubic-bezier(.22,.61,.36,1)">Ease out</option>
+                <option value="cubic-bezier(.65,0,.35,1)">Ease in out</option>
+                <option value="cubic-bezier(.34,1.56,.64,1)">Overshoot</option>
+                <option value="linear">Linear</option>
+              </select></div>
+          </div>
+          <div class="tog"><label>Scroll back into view when a panel opens</label>
+            <span class="sw"><input type="checkbox" id="scrollToOnOpen" checked onchange="sync()"><span></span></span></div>
+          <div class="row" id="rowScrollOffset"><label>Scroll offset (px)</label>
+            <input type="number" id="scrollOffset" value="0" oninput="sync()">
+            <div class="hint">Use your header height if it's fixed.</div></div>
+          <div class="tog"><label>Put the open panel in the URL</label>
+            <span class="sw"><input type="checkbox" id="updateUrl" onchange="sync()"><span></span></span></div>
+          <div class="tog"><label>Arrow-key navigation</label>
+            <span class="sw"><input type="checkbox" id="keyboardNav" checked onchange="sync()"><span></span></span></div>
+          <div class="tog"><label>Respect “reduce motion”</label>
+            <span class="sw"><input type="checkbox" id="respectReducedMotion" checked onchange="sync()"><span></span></span></div>
+          <div class="row"><label>Mobile breakpoint (px)</label>
+            <input type="number" id="mobileBreakpoint" value="767" min="320" oninput="sync()">
+            <div class="hint">Below this the rails stack into a normal accordion. Use the Desktop/Mobile toggle to preview.</div></div>
+          <div class="row"><label>On mobile</label>
+            <select id="mobileLayout" onchange="sync()">
+              <option value="stacked">Stack into a normal accordion</option>
+              <option value="horizontal">Keep the vertical rails</option>
+            </select></div>
+        </div>
+      </section>
+
+      <!-- ADVANCED -->
+      <section class="grp closed" data-g>
+        <button class="grp-head" onclick="tog(this)">Advanced
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <div class="grp-body">
+          <div class="note">These only matter when panels render full page sections. Leave them on unless something conflicts.</div>
+          <div class="tog"><label>Re-initialise Squarespace blocks</label>
+            <span class="sw"><input type="checkbox" id="initWebsiteComponents" checked onchange="sync()"><span></span></span></div>
+          <div class="hint">Needed for accordion, marquee and shape blocks inside a fetched page.</div>
+          <div class="tog"><label>Reload the site script bundle</label>
+            <span class="sw"><input type="checkbox" id="reloadSiteBundle" checked onchange="sync()"><span></span></span></div>
+          <div class="hint">Needed for video backgrounds, list sections and galleries inside a fetched page.</div>
+          <div class="tog"><label>Patch the default colour theme</label>
+            <span class="sw"><input type="checkbox" id="duplicateRootTheme" checked onchange="sync()"><span></span></span></div>
+          <div class="hint">Copies the site's default <code class="inl">:root</code> theme onto fetched sections so they aren't left unstyled.</div>
+          <div class="row">
+            <label>Weglot paths (optional)</label>
+            <textarea id="weglotPaths" rows="2" placeholder="fr: /fr/portfolio&#10;de: /de/portfolio" oninput="sync()"></textarea>
+            <div class="hint">One per line — <code class="inl">language code: collection URL</code></div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div class="tabs">
+        <button class="tab on" data-tab="preview" onclick="showTab('preview')">Preview</button>
+        <button class="tab" data-tab="code" onclick="showTab('code')">Code</button>
+        <button class="tab" data-tab="install" onclick="showTab('install')">Install</button>
+      </div>
+      <div class="topbar-right">
+        <div class="devtog" id="devtog">
+          <button class="on" data-dev="desktop" onclick="setDevice('desktop')">Desktop</button>
+          <button data-dev="mobile" onclick="setDevice('mobile')">Mobile</button>
+        </div>
+        <button class="copy-btn" id="copyBtn" onclick="copyCode()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy code
+        </button>
+      </div>
+    </div>
+
+    <div class="pane" id="pane-preview">
+      <div class="urlbar">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20"/></svg>
+        yoursite.com<b id="pvUrl">/portfolio</b>
+      </div>
+      <p class="pv-note">Live preview — it runs the shipped stylesheet and the same markup and measuring logic as the plugin, on placeholder items. Click the rails.</p>
+      <div class="pv-wrap" id="pvWrap">
+        <div class="pv-scroll">
+          <div id="siteWrapper">
+            <div class="pv-container">
+              <div data-sdl-plugin="vertical-accordions" id="pvMount"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pane" id="pane-code" hidden>
+      <p class="codelabel">1 · Code Block on the page</p>
+      <pre id="outMarkup"></pre>
+      <p class="codelabel">2 · Code Injection → Footer</p>
+      <pre id="outInject"></pre>
+    </div>
+
+    <div class="pane" id="pane-install" hidden>
+      <div class="steps">
+        <h3>Where this goes</h3>
+        <ol>
+          <li>Open <b>Settings → Advanced → Code Injection</b> and paste block <b>2</b> into the <b>Footer</b> box. Save.</li>
+          <li>Edit the page you want the accordion on and add a <b>Code Block</b> where it should sit.</li>
+          <li>Paste block <b>1</b> into the Code Block, delete anything else that's in there, and save.</li>
+          <li>Leave the editor and reload the live page — the accordion only builds on the published page.</li>
+        </ol>
+      </div>
+      <div class="steps">
+        <h3>Good to know</h3>
+        <ul style="margin:0;padding-left:20px">
+          <li style="margin-bottom:7px">A <b>portfolio</b> collection renders each item's full page sections. Everything else builds a card from the item fields.</li>
+          <li style="margin-bottom:7px">Add <code class="inl">?featured</code> to the collection URL to use starred items only.</li>
+          <li style="margin-bottom:7px">Link straight to a panel with <code class="inl">?va-active=3</code>.</li>
+          <li style="margin-bottom:7px">More than one accordion on a page is fine — give each Code Block its own <code class="inl">data-source</code> and add a <code class="inl">data-config</code> attribute to override any setting per instance.</li>
+          <li>Scripting hooks: <code class="inl">sdlVerticalAccordions:ready</code>, <code class="inl">:loaded</code>, <code class="inl">:open</code>, <code class="inl">:close</code>. Each mount exposes <code class="inl">el.sdlVerticalAccordion</code> with <code class="inl">open() / next() / prev() / refresh() / destroy()</code>.</li>
+        </ul>
+      </div>
+      <div class="steps">
+        <h3>Which item fields are used</h3>
+        <table>
+          <tr><th>Rail title</th><td>Item title, its categories, or your own list</td></tr>
+          <tr><th>Excerpt</th><td>The item excerpt, falling back to the start of the body</td></tr>
+          <tr><th>Image</th><td>The item's thumbnail</td></tr>
+          <tr><th>Button</th><td>Links to the item</td></tr>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ==========================================================================
+   Config generator
+   The preview reuses the plugin's own markup builders, style mapping and
+   measuring logic verbatim (see PLUGIN CORE below) so what you see here is
+   what the live plugin does.
+   ========================================================================== */
+
+const $ = id => document.getElementById(id);
+const MAX_PANELS = 12;
+
+/* ---------- plugin defaults, mirrored from verticalAccordion.js ---------- */
+const DEFAULTS = {
+  source: undefined, panelLimit: 5, contentMode: "auto", reverseOrder: false,
+  titleSource: "title", customTitles: "", titleTag: "h3", showNumber: "none",
+  showNumberInRail: true, showTitleInPanel: true, showExcerpt: true, excerptLength: 240,
+  showImage: true, imageFit: "cover", mediaHeight: 240, showButton: true, buttonLabel: "Read more",
+  buttonTarget: "_self", buttonStyle: "primary", weglotPaths: undefined,
+  layout: "rails", heightMode: "content", fixedHeight: "620px", minPanelHeight: "30vh",
+  maxPanelHeight: "80vh", railWidth: "equal", panelGap: 0, borderRadius: 0, borderWidth: 1,
+  borderColor: "currentColor", fullWidth: false, railSide: "left",
+  verticalTextDirection: "up", titleAlign: "end", contentAlign: "bottom", contentPadding: 40,
+  initialOpen: 1, allowAllClosed: false, trigger: "click", autoplay: false,
+  autoplayDelay: 5000, pauseOnHover: true, loop: true, transitionDuration: 500,
+  easing: "ease", scrollToOnOpen: true, scrollOffset: 0, updateUrl: false,
+  keyboardNav: true, respectReducedMotion: true, mobileBreakpoint: 767,
+  mobileLayout: "stacked", colorMode: "theme", rampFrom: "#f2f2f2", rampTo: "#111111",
+  panelColors: [], titleColor: "", titleFontFamily: "", titleSize: "",
+  titleTextTransform: "", titleLetterSpacing: "", titlePadding: 16, numberSize: "",
+  excerptSize: "", iconStyle: "plus", icon: "", iconPlacement: "bottom",
+  iconShape: "bare", iconSize: 24, overlayTint: 0,
+  reloadSiteBundle: true, initWebsiteComponents: true, duplicateRootTheme: true
+};
+
+/* ========================= PLUGIN CORE (verbatim) ========================= */
+
+function escapeHtml(str){return String(str==null?"":str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function stripHtml(html){const d=document.createElement("div");d.innerHTML=String(html==null?"":html);return (d.textContent||"").replace(/\s+/g," ").trim();}
+function truncate(text,max){const limit=parseInt(max,10);if(!limit||limit<1||text.length<=limit)return text;const cut=text.slice(0,limit);const ls=cut.lastIndexOf(" ");return (ls>limit*0.6?cut.slice(0,ls):cut).replace(/[,;:.\s]+$/,"")+"…";}
+const ROMAN=[[10,"X"],[9,"IX"],[5,"V"],[4,"IV"],[1,"I"]];
+function formatNumber(index,style){const n=index+1;if(style==="pad")return n<10?"0"+n:String(n);if(style==="plain")return String(n);
+  if(style==="roman"){let num=n,out="";ROMAN.forEach(([v,r])=>{while(num>=v){out+=r;num-=v;}});return out+".";}return "";}
+function toNumber(v,f){const n=parseFloat(v);return isNaN(n)?f:n;}
+function toLength(v,f){if(v==null||v==="")return f;if(typeof v==="number")return v+"px";const s=String(v).trim();return /^-?\d*\.?\d+$/.test(s)?s+"px":s;}
+function hexToRgb(hex){let h=String(hex||"").trim().replace("#","");if(h.length===3)h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+  if(!/^[0-9a-f]{6}$/i.test(h))return null;return {r:parseInt(h.slice(0,2),16),g:parseInt(h.slice(2,4),16),b:parseInt(h.slice(4,6),16)};}
+function rgbToHex(r,g,b){const to=v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,"0");return "#"+to(r)+to(g)+to(b);}
+function mixColors(from,to,t){const a=hexToRgb(from),b=hexToRgb(to);if(!a||!b)return from;
+  return rgbToHex(a.r+(b.r-a.r)*t,a.g+(b.g-a.g)*t,a.b+(b.b-a.b)*t);}
+function shade(hex,amount){const c=hexToRgb(hex);if(!c)return hex;const target=amount>0?255:0,t=Math.abs(amount);
+  return rgbToHex(c.r+(target-c.r)*t,c.g+(target-c.g)*t,c.b+(target-c.b)*t);}
+function isLight(hex){const c=hexToRgb(hex);if(!c)return true;const ch=v=>{const s=v/255;return s<=0.03928?s/12.92:Math.pow((s+0.055)/1.055,2.4);};
+  return 0.2126*ch(c.r)+0.7152*ch(c.g)+0.0722*ch(c.b)>0.42;}
+
+const ICONS={
+  plus:'<span class="va-icon va-icon--plus"><span class="va-icon__h"></span><span class="va-icon__v"></span></span>',
+  arrow:'<svg class="va-icon va-icon--svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.25 6.75 12 3m0 0 3.75 3.75M12 3v18"/></svg>',
+  chevron:'<svg class="va-icon va-icon--svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="18 15 12 9 6 15"/></svg>'
+};
+function iconMarkup(s){if(s.iconStyle==="none")return "";if(s.iconStyle==="custom")return s.icon||ICONS.plus;return ICONS[s.iconStyle]||ICONS.plus;}
+
+function titleFor(item,index,s){
+  if(s.titleSource==="categories"){const l=item.categories||[];if(l.length)return l.join(", ");}
+  if(s.titleSource==="custom"){const c=String(s.customTitles||"").split(",").map(x=>x.trim()).filter(Boolean);if(c[index])return c[index];}
+  return item.title||"";
+}
+function buttonClassFor(style){
+  if(style==="link")return "va-card__link";
+  const v=style==="secondary"?"secondary":"primary";
+  return "va-card__btn sqs-block-button-element sqs-block-button-element--medium sqs-button-element--"+v;
+}
+function cardMarkup(item,index,s){
+  const number=formatNumber(index,s.showNumber);
+  const excerptText=truncate(stripHtml(item.excerpt||item.body),s.excerptLength);
+  const media=s.showImage&&item.image
+    ? '<div class="va-card__media" data-fit="'+escapeHtml(s.imageFit)+'"><img src="'+escapeHtml(item.image)+'" alt="'+escapeHtml(item.imageAlt)+'" loading="lazy">'+
+      (toNumber(s.overlayTint,0)>0?'<span class="va-card__tint"></span>':"")+"</div>"
+    : "";
+  const parts=[];
+  if(number&&s.showNumber!=="none")parts.push('<span class="va-card__num">'+escapeHtml(number)+"</span>");
+  if(s.showTitleInPanel){const t=escapeHtml(s.titleTag||"h3");
+    parts.push("<"+t+' class="va-card__title">'+escapeHtml(titleFor(item,index,s))+"</"+t+">");}
+  if(s.showExcerpt&&excerptText)parts.push('<p class="va-card__excerpt">'+escapeHtml(excerptText)+"</p>");
+  if(s.showButton&&item.fullUrl)parts.push('<a class="'+buttonClassFor(s.buttonStyle)+'" href="'+escapeHtml(item.fullUrl)+
+    '" target="'+escapeHtml(s.buttonTarget)+'"'+(s.buttonTarget==="_blank"?' rel="noopener noreferrer"':"")+">"+
+    escapeHtml(s.buttonLabel||"Read more")+"</a>");
+  return '<div class="va-card">'+media+'<div class="va-card__body">'+parts.join("")+"</div></div>";
+}
+function panelMarkup(item,index,s,mode,uid){
+  const railTitle=titleFor(item,index,s);
+  const number=formatNumber(index,s.showNumber);
+  const tag=escapeHtml(s.titleTag||"h3");
+  const icon=iconMarkup(s);
+  const panelId=uid+"-panel-"+index, buttonId=uid+"-title-"+index;
+  const railNumber=s.showNumberInRail&&number&&s.showNumber!=="none"
+    ? '<span class="va-rail__num">'+escapeHtml(number)+"</span>" : "";
+  const content=mode==="sections"?(item.body||cardMarkup(item,index,s)):cardMarkup(item,index,s);
+  return '<div class="accordion-panel" data-index="'+index+'">'+
+    '<button type="button" class="accordion-title" id="'+buttonId+'" aria-expanded="false" aria-controls="'+panelId+'" tabindex="-1">'+
+    railNumber+"<"+tag+' class="text"><span class="va-rail__label">'+escapeHtml(railTitle)+"</span></"+tag+">"+
+    (icon?'<span class="icon-wrapper">'+icon+"</span>":"")+"</button>"+
+    '<div class="accordion-content-wrapper" id="'+panelId+'" role="region" aria-labelledby="'+buttonId+'">'+
+    '<div class="accordion-content">'+content+"</div></div></div>";
+}
+function applyStyleVars(root,component,s,panelCount){
+  const set=(n,v)=>{if(v===""||v==null)component.style.removeProperty(n);else component.style.setProperty(n,v);};
+  set("--va-transition-duration",toNumber(s.transitionDuration,500)+"ms");
+  set("--va-easing",s.easing||"ease");
+  set("--va-panel-gap",toLength(s.panelGap,"0px"));
+  set("--va-border-radius",toLength(s.borderRadius,"0px"));
+  set("--va-border-width",toLength(s.borderWidth,"0px"));
+  set("--va-border-color",s.borderColor||"currentColor");
+  set("--va-min-panel-height",toLength(s.minPanelHeight,"30vh"));
+  set("--va-max-panel-height",toLength(s.maxPanelHeight,"80vh"));
+  set("--va-fixed-height",toLength(s.fixedHeight,"620px"));
+  set("--va-content-padding",toLength(s.contentPadding,"40px"));
+  set("--va-media-height",toLength(s.mediaHeight,"240px"));
+  set("--va-accordion-title-padding",toLength(s.titlePadding,"16px"));
+  set("--va-accordion-title-color",s.titleColor);
+  set("--va-accordion-title-font-family",s.titleFontFamily);
+  set("--va-accordion-title-size",s.titleSize);
+  set("--va-accordion-title-text-transform",s.titleTextTransform);
+  set("--va-accordion-title-letter-spacing",s.titleLetterSpacing);
+  set("--va-number-size",s.numberSize);
+  set("--va-excerpt-size",s.excerptSize);
+  set("--va-icon-width",toLength(s.iconSize,"24px"));
+  set("--va-overlay-tint",String(toNumber(s.overlayTint,0)/100));
+  root.dataset.layout=s.layout; root.dataset.railSide=s.railSide;
+  root.dataset.textDirection=s.verticalTextDirection; root.dataset.titleAlign=s.titleAlign;
+  root.dataset.contentAlign=s.contentAlign; root.dataset.iconPlacement=s.iconPlacement;
+  root.dataset.iconShape=s.iconShape; root.dataset.heightMode=s.heightMode;
+  root.dataset.colorMode=s.colorMode;
+  root.classList.toggle("va-full-width",!!s.fullWidth);
+  root.classList.toggle("va-gapped",toNumber(s.panelGap,0)>0);
+  for(let i=1;i<=MAX_PANELS;i++){
+    component.style.removeProperty("--va-panel-"+i+"-background");
+    component.style.removeProperty("--va-panel-hover-"+i+"-background");
+    component.style.removeProperty("--va-panel-"+i+"-color");
+  }
+  if(s.colorMode==="ramp"){
+    const steps=Math.max(1,panelCount-1);
+    for(let i=0;i<panelCount;i++){
+      const bg=mixColors(s.rampFrom,s.rampTo,panelCount===1?0:i/steps), light=isLight(bg);
+      set("--va-panel-"+(i+1)+"-background",bg);
+      set("--va-panel-hover-"+(i+1)+"-background",shade(bg,light?-0.08:0.12));
+      set("--va-panel-"+(i+1)+"-color",light?"#111111":"#ffffff");
+    }
+  }else if(s.colorMode==="custom"){
+    (s.panelColors||[]).slice(0,MAX_PANELS).forEach((e,i)=>{
+      if(!e||!e.bg)return;
+      set("--va-panel-"+(i+1)+"-background",e.bg);
+      set("--va-panel-hover-"+(i+1)+"-background",e.hover||shade(e.bg,isLight(e.bg)?-0.08:0.12));
+      set("--va-panel-"+(i+1)+"-color",e.text||(isLight(e.bg)?"#111111":"#ffffff"));
+    });
+  }
+}
+/* ======================= END PLUGIN CORE (verbatim) ======================= */
+
+/* ---------- placeholder items ---------- */
+const HUES=[212,28,158,286,44,192,340,120,258,16,180,68];
+function placeholderImage(i,label){
+  const h=HUES[i%HUES.length];
+  const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">'+
+    '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">'+
+    '<stop offset="0" stop-color="hsl('+h+' 42% 62%)"/><stop offset="1" stop-color="hsl('+((h+40)%360)+' 46% 34%)"/>'+
+    '</linearGradient></defs><rect width="800" height="600" fill="url(#g)"/>'+
+    '<circle cx="620" cy="150" r="110" fill="rgba(255,255,255,.16)"/>'+
+    '<circle cx="180" cy="470" r="150" fill="rgba(0,0,0,.12)"/>'+
+    '<text x="400" y="320" font-family="sans-serif" font-size="52" font-weight="600" fill="rgba(255,255,255,.85)" text-anchor="middle">'+label+'</text></svg>';
+  return "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg);
+}
+const SAMPLE=[
+  {title:"The Atlas Project",categories:["Strategy"],excerpt:"A ground-up rebrand for a logistics company that had outgrown its own name. We rebuilt the identity, the site and the way they talk about themselves."},
+  {title:"The Brightline Project",categories:["Identity"],excerpt:"Six months of research turned into a system that a twelve-person team can actually run without us in the room."},
+  {title:"The Lumen Project",categories:["Digital"],excerpt:"A retail site rebuilt around one question: how quickly can somebody find the thing they came for?"},
+  {title:"The Echo Project",categories:["Campaign"],excerpt:"A launch campaign that had to work on a billboard, a phone screen and the side of a van."},
+  {title:"Demo Project",categories:["Product"],excerpt:"Turning a spreadsheet-shaped internal tool into something the whole company was happy to open on a Monday."},
+  {title:"Test Project",categories:["Editorial"],excerpt:"A quarterly publication, redesigned so the editorial team could lay an issue out in an afternoon."},
+  {title:"Northwind",categories:["Packaging"],excerpt:"Packaging for a small-batch roastery, built to survive a supermarket shelf and still feel handmade."},
+  {title:"Fieldnote",categories:["Motion"],excerpt:"A title sequence and a set of motion rules that the in-house team still uses two years later."},
+  {title:"Halcyon",categories:["Interiors"],excerpt:"Wayfinding for a building that people kept getting lost in, solved mostly with paint."},
+  {title:"Cartograph",categories:["Data"],excerpt:"Making a decade of survey data legible to people who don't read charts for a living."},
+  {title:"Sunspot",categories:["Brand"],excerpt:"A visual language warm enough for a children's charity and serious enough for its funders."},
+  {title:"Meridian",categories:["Web"],excerpt:"A publishing platform for a research institute, designed around long reading."}
+];
+function sampleItems(n){
+  return SAMPLE.slice(0,n).map((it,i)=>({
+    id:"s"+i, title:it.title, categories:it.categories,
+    excerpt:it.excerpt, body:it.excerpt,
+    fullUrl:"/portfolio/"+it.title.toLowerCase().replace(/[^a-z0-9]+/g,"-"),
+    image:placeholderImage(i,String(i+1).padStart(2,"0")), imageAlt:it.title,
+    sections:'<div class="pv-section"><h4>'+escapeHtml(it.title)+'</h4><div class="pv-fake-block"></div>'+
+             '<p>'+escapeHtml(it.excerpt)+'</p></div>'
+  }));
+}
+
+/* ---------- reading the form ---------- */
+const val=id=>$(id).value;
+const num=id=>parseFloat($(id).value)||0;
+const chk=id=>$(id).checked;
+let customColors=[
+  {bg:"#12312a",hover:"",text:""},{bg:"#2f6350",hover:"",text:""},
+  {bg:"#8d9d92",hover:"",text:""},{bg:"#c9cfc9",hover:"",text:""},
+  {bg:"#f26522",hover:"",text:""}
+];
+
+function railWidthValue(){
+  const mode=val("railWidthMode");
+  return mode==="fixed"?num("railWidthPx"):mode;
+}
+function parseWeglot(){
+  const raw=val("weglotPaths").trim();
+  if(!raw)return undefined;
+  const out={};
+  raw.split("\n").forEach(line=>{
+    const i=line.indexOf(":");
+    if(i<0)return;
+    const k=line.slice(0,i).trim(), v=line.slice(i+1).trim();
+    if(k&&v)out[k]=v;
+  });
+  return Object.keys(out).length?out:undefined;
+}
+
+function readSettings(){
+  return {
+    source:val("source").trim(),
+    panelLimit:Math.max(1,Math.min(MAX_PANELS,num("panelLimit"))),
+    contentMode:val("contentMode"),
+    reverseOrder:chk("reverseOrder"),
+    titleSource:val("titleSource"),
+    customTitles:val("customTitles"),
+    titleTag:val("titleTag"),
+    showNumber:val("showNumber"),
+    showNumberInRail:chk("showNumberInRail"),
+    showTitleInPanel:chk("showTitleInPanel"),
+    showExcerpt:chk("showExcerpt"),
+    excerptLength:num("excerptLength"),
+    showImage:chk("showImage"),
+    imageFit:val("imageFit"),
+    mediaHeight:num("mediaHeight"),
+    showButton:chk("showButton"),
+    buttonLabel:val("buttonLabel"),
+    buttonTarget:val("buttonTarget"),
+    buttonStyle:val("buttonStyle"),
+    weglotPaths:parseWeglot(),
+    layout:currentPreset,
+    heightMode:val("heightMode"),
+    fixedHeight:val("fixedHeight"),
+    minPanelHeight:val("minPanelHeight"),
+    maxPanelHeight:val("maxPanelHeight"),
+    railWidth:railWidthValue(),
+    panelGap:num("panelGap"),
+    borderRadius:num("borderRadius"),
+    borderWidth:num("borderWidth"),
+    borderColor:chk("borderInherit")?"currentColor":val("borderColor"),
+    fullWidth:chk("fullWidth"),
+    railSide:val("railSide"),
+    verticalTextDirection:val("verticalTextDirection"),
+    titleAlign:val("titleAlign"),
+    contentAlign:val("contentAlign"),
+    contentPadding:num("contentPadding"),
+    initialOpen:Math.max(1,num("initialOpen")),
+    allowAllClosed:chk("allowAllClosed"),
+    trigger:val("trigger"),
+    autoplay:chk("autoplay"),
+    autoplayDelay:Math.round(parseFloat(val("autoplaySeconds"))*1000)||5000,
+    pauseOnHover:chk("pauseOnHover"),
+    loop:chk("loop"),
+    transitionDuration:num("transitionDuration"),
+    easing:val("easing"),
+    scrollToOnOpen:chk("scrollToOnOpen"),
+    scrollOffset:num("scrollOffset"),
+    updateUrl:chk("updateUrl"),
+    keyboardNav:chk("keyboardNav"),
+    respectReducedMotion:chk("respectReducedMotion"),
+    mobileBreakpoint:num("mobileBreakpoint"),
+    mobileLayout:val("mobileLayout"),
+    colorMode:val("colorMode"),
+    rampFrom:val("rampFrom"),
+    rampTo:val("rampTo"),
+    panelColors:val("colorMode")==="custom"
+      ? customColors.filter(c=>c.bg).map(c=>{
+          const out={bg:c.bg};
+          if(c.hover)out.hover=c.hover;
+          if(c.text)out.text=c.text;
+          return out;
+        })
+      : [],
+    titleColor:chk("titleColorInherit")?"":val("titleColor"),
+    titleFontFamily:val("titleFontFamily").trim(),
+    titleSize:val("titleSize").trim(),
+    titleTextTransform:val("titleTextTransform"),
+    titleLetterSpacing:val("titleLetterSpacing").trim(),
+    titlePadding:num("titlePadding"),
+    numberSize:val("numberSize").trim(),
+    excerptSize:val("excerptSize").trim(),
+    iconStyle:val("iconStyle"),
+    icon:val("icon").trim(),
+    iconPlacement:val("iconPlacement"),
+    iconShape:val("iconShape"),
+    iconSize:num("iconSize"),
+    overlayTint:num("overlayTint"),
+    reloadSiteBundle:chk("reloadSiteBundle"),
+    initWebsiteComponents:chk("initWebsiteComponents"),
+    duplicateRootTheme:chk("duplicateRootTheme")
+  };
+}
+
+/* ---------- presets ---------- */
+let currentPreset="rails";
+const PRESETS={
+  rails:{heightMode:"fixed",fixedHeight:"620px",panelGap:8,borderRadius:14,borderWidth:0,
+    showNumber:"pad",showNumberInRail:true,iconShape:"circle",iconPlacement:"bottom",
+    contentAlign:"bottom",titleAlign:"end",imageFit:"contain",mediaHeight:300,colorMode:"custom",
+    fullWidth:false,contentPadding:40,railWidthMode:"equal"},
+  fullbleed:{heightMode:"fixed",fixedHeight:"100vh",panelGap:0,borderRadius:0,borderWidth:0,
+    showNumber:"none",iconShape:"bare",iconPlacement:"bottom",contentAlign:"bottom",
+    titleAlign:"end",imageFit:"cover",mediaHeight:240,colorMode:"ramp",fullWidth:true,contentPadding:56,
+    railWidthMode:"fixed",railWidthPx:70},
+  minimal:{heightMode:"content",panelGap:0,borderRadius:0,borderWidth:1,showNumber:"none",
+    iconShape:"bare",iconPlacement:"top",contentAlign:"top",titleAlign:"center",
+    imageFit:"inline",mediaHeight:200,colorMode:"theme",fullWidth:false,contentPadding:36,railWidthMode:"equal"}
+};
+function applyPreset(name){
+  currentPreset=name;
+  const p=PRESETS[name];
+  Object.keys(p).forEach(k=>{
+    const el=$(k);
+    if(!el)return;
+    if(el.type==="checkbox")el.checked=!!p[k];else el.value=p[k];
+  });
+  document.querySelectorAll(".preset").forEach(b=>b.classList.toggle("on",b.dataset.preset===name));
+  sync();
+}
+
+/* ---------- custom colour rows ---------- */
+const TRASH='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>';
+function renderColorRows(){
+  const list=$("colorList");
+  list.innerHTML=customColors.map((c,i)=>
+    '<div class="cprow">'+
+      '<span class="idx">'+(i+1)+'</span>'+
+      '<input type="color" value="'+(c.bg||"#cccccc")+'" oninput="setColor('+i+',\'bg\',this.value)">'+
+      '<input type="color" value="'+(c.hover||shade(c.bg||"#cccccc",isLight(c.bg||"#cccccc")?-0.08:0.12))+'" oninput="setColor('+i+',\'hover\',this.value)">'+
+      '<input type="color" value="'+(c.text||(isLight(c.bg||"#cccccc")?"#111111":"#ffffff"))+'" oninput="setColor('+i+',\'text\',this.value)">'+
+      '<button title="Remove" onclick="removeColor('+i+')">'+TRASH+'</button>'+
+    '</div>').join("");
+}
+function setColor(i,key,v){customColors[i][key]=v;if(key==="bg"){renderColorRows();}sync();}
+function removeColor(i){customColors.splice(i,1);renderColorRows();sync();}
+function addColorRow(){
+  if(customColors.length>=MAX_PANELS)return;
+  customColors.push({bg:"#dddddd",hover:"",text:""});
+  renderColorRows();sync();
+}
+
+/* ---------- conditional fields ---------- */
+function updateVisibility(s){
+  $("rowCustomTitles").hidden = s.titleSource!=="custom";
+  $("rowExcerptLength").hidden = !s.showExcerpt;
+  $("rowImageFit").hidden = !s.showImage;
+  $("rowTint").hidden = !(s.showImage && s.imageFit==="cover");
+  $("rowMediaHeight").hidden = !(s.showImage && s.imageFit!=="cover");
+  $("btnArea").hidden = !s.showButton;
+  $("rowFixedHeight").hidden = s.heightMode!=="fixed";
+  $("rowMinMax").hidden = s.heightMode==="fixed";
+  $("rowRailWidth").hidden = val("railWidthMode")!=="fixed";
+  $("borderColor").parentElement.hidden = chk("borderInherit");
+  $("rowRamp").hidden = s.colorMode!=="ramp";
+  $("rampHint").hidden = s.colorMode!=="ramp";
+  $("customArea").hidden = s.colorMode!=="custom";
+  $("rowTitleColor").hidden = chk("titleColorInherit");
+  $("rowCustomIcon").hidden = s.iconStyle!=="custom";
+  $("rowIconOpts").hidden = s.iconStyle==="none";
+  $("rowIconSize").hidden = s.iconStyle==="none";
+  $("autoArea").hidden = !s.autoplay;
+  $("rowScrollOffset").hidden = !s.scrollToOnOpen;
+  $("fieldsNote").hidden = s.contentMode==="fields";
+}
+
+/* ---------- preview ---------- */
+let device="desktop";
+let pv=null;
+
+function setDevice(d){
+  device=d;
+  document.querySelectorAll("#devtog button").forEach(b=>b.classList.toggle("on",b.dataset.dev===d));
+  $("pvWrap").classList.toggle("mobile",d==="mobile");
+  sync();
+}
+
+function buildPreview(s){
+  const root=$("pvMount");
+  if(pv&&pv.cleanup)pv.cleanup();
+
+  const mode = s.contentMode==="auto"
+    ? (/portfolio/i.test(s.source) ? "sections" : "fields")
+    : s.contentMode;
+
+  let items=sampleItems(MAX_PANELS).map(it=>({...it, body: mode==="sections"?it.sections:it.body}));
+  if(s.reverseOrder)items.reverse();
+  items=items.slice(0,s.panelLimit);
+
+  const uid="pv";
+  root.innerHTML='<div class="vertical-accordions" data-mode="'+mode+'">'+
+    items.map((it,i)=>panelMarkup(it,i,s,mode,uid)).join("")+"</div>";
+
+  const component=root.querySelector(".vertical-accordions");
+  const panels=[...root.querySelectorAll(".accordion-panel")];
+  const titles=panels.map(p=>p.querySelector(".accordion-title"));
+  const wrappers=panels.map(p=>p.querySelector(".accordion-content-wrapper"));
+
+  applyStyleVars(root,component,s,panels.length);
+  root.classList.add("loaded");
+
+  let activeIndex=-1, timer=null, hovering=false;
+
+  // The preview pane stands in for the browser viewport, so the Desktop/Mobile
+  // toggle crosses the breakpoint exactly the way a real resize would.
+  const viewport=root.closest(".pv-scroll");
+  const isMobile=()=> s.mobileLayout==="stacked" && viewport.getBoundingClientRect().width<=s.mobileBreakpoint;
+
+  function contentNodeOf(panel){
+    return panel.querySelector(".pv-section")||panel.querySelector(".va-card")||panel.querySelector(".accordion-content");
+  }
+  function measure(){
+    const mobile=isMobile();
+    root.classList.toggle("va-mobile",mobile);
+    if(mobile){
+      titles.forEach(t=>t.style.width="");
+      component.style.removeProperty("--va-active-width");
+      measureMobileHeight();
+      return;
+    }
+    let railTotal=0;
+    if(s.railWidth==="auto"){
+      titles.forEach(t=>t.style.width="");
+      titles.forEach(t=>{railTotal+=t.getBoundingClientRect().width;});
+    }else{
+      let w;
+      if(s.railWidth==="equal"){
+        titles.forEach(t=>t.style.width="");
+        w=Math.ceil(titles.reduce((m,t)=>Math.max(m,t.getBoundingClientRect().width),0))||56;
+      }else{ w=toNumber(s.railWidth,56); }
+      titles.forEach(t=>t.style.width=w+"px");
+      railTotal=w*titles.length;
+    }
+    const cw=component.getBoundingClientRect().width;
+    const gapTotal=Math.max(0,panels.length-1)*toNumber(s.panelGap,0);
+    component.style.setProperty("--va-active-width",Math.max(0,Math.floor(cw-railTotal-gapTotal))+"px");
+    measureTallest();
+  }
+  function naturalHeight(node){
+    const prev=node.style.minHeight;
+    node.style.minHeight="0";
+    const h=node.scrollHeight;
+    node.style.minHeight=prev;
+    return h;
+  }
+  function measureTallest(){
+    if(s.heightMode==="fixed"){component.style.removeProperty("--va-tallest-panel-height");return;}
+    let max=0;
+    panels.forEach(p=>{const n=contentNodeOf(p);if(n)max=Math.max(max,naturalHeight(n));});
+    if(max)component.style.setProperty("--va-tallest-panel-height",max+"px");
+  }
+  function measureMobileHeight(){
+    const p=panels[activeIndex];if(!p)return;
+    const n=contentNodeOf(p);
+    if(n)component.style.setProperty("--va-active-height",naturalHeight(n)+"px");
+  }
+  function open(i){
+    if(i<0||i>=panels.length)return;
+    if(i===activeIndex){ if(s.allowAllClosed)close(); return; }
+    activeIndex=i;
+    panels.forEach((p,j)=>{
+      const on=j===i;
+      p.classList.toggle("panel-active",on);
+      titles[j].setAttribute("aria-expanded",on?"true":"false");
+      titles[j].setAttribute("tabindex",on?"0":"-1");
+      wrappers[j].setAttribute("aria-hidden",on?"false":"true");
+    });
+    root.classList.remove("va-none-active");
+    if(isMobile())measureMobileHeight();
+  }
+  function close(){
+    if(!s.allowAllClosed)return;
+    activeIndex=-1;
+    panels.forEach((p,j)=>{p.classList.remove("panel-active");titles[j].setAttribute("aria-expanded","false");});
+    root.classList.add("va-none-active");
+  }
+  function step(d){
+    let n=activeIndex+d;
+    if(n>=panels.length)n=s.loop?0:panels.length-1;
+    if(n<0)n=s.loop?panels.length-1:0;
+    open(n);
+  }
+
+  panels.forEach((panel,i)=>{
+    if(s.trigger==="click"||s.trigger==="both"){
+      panel.addEventListener("click",e=>{
+        if(activeIndex===i&&e.target.closest("a, button:not(.accordion-title)"))return;
+        e.preventDefault();
+        open(i);
+      });
+    }
+    if(s.trigger==="hover"||s.trigger==="both"){
+      titles[i].addEventListener("mouseenter",()=>open(i));
+    }
+    titles[i].addEventListener("keydown",e=>{
+      if(!s.keyboardNav)return;
+      const mobile=isMobile();
+      const nextKey=mobile?"ArrowDown":"ArrowRight", prevKey=mobile?"ArrowUp":"ArrowLeft";
+      let handled=true;
+      if(e.key===nextKey)step(1); else if(e.key===prevKey)step(-1);
+      else if(e.key==="Home")open(0); else if(e.key==="End")open(panels.length-1);
+      else if(e.key==="Enter"||e.key===" ")open(i);
+      else handled=false;
+      if(handled){e.preventDefault();(titles[activeIndex]||titles[i]).focus();}
+    });
+  });
+  root.addEventListener("mouseenter",()=>hovering=true);
+  root.addEventListener("mouseleave",()=>hovering=false);
+
+  measure();
+  open(Math.min(Math.max(1,s.initialOpen),panels.length)-1);
+  requestAnimationFrame(measure);
+  setTimeout(measure,120);
+
+  const ro=new ResizeObserver(()=>measure());
+  ro.observe(viewport);
+
+  if(s.autoplay&&panels.length>1){
+    timer=setInterval(()=>{ if(s.pauseOnHover&&hovering)return; step(1); },Math.max(1200,s.autoplayDelay));
+  }
+
+  pv={cleanup(){ if(timer)clearInterval(timer); ro.disconnect(); }};
+}
+
+/* ---------- code output ---------- */
+const OMIT_FROM_CONFIG=["source"];
+function diffFromDefaults(s){
+  const out={};
+  Object.keys(s).forEach(k=>{
+    if(OMIT_FROM_CONFIG.includes(k))return;
+    const v=s[k], d=DEFAULTS[k];
+    if(v===undefined)return;
+    if(JSON.stringify(v)===JSON.stringify(d))return;
+    out[k]=v;
+  });
+  return out;
+}
+const CDN="https://cdn.jsdelivr.net/gh/square-design-lab/Vertical-Accordion@main/";
+
+function buildCode(s){
+  const markup='<div data-sdl-plugin="vertical-accordions" data-source="'+escapeHtml(s.source||"/portfolio")+'"></div>';
+  const diff=diffFromDefaults(s);
+  const settings=Object.keys(diff).length
+    ? "<script>\n  window.sdlVerticalAccordionSettings = "+JSON.stringify(diff,null,2).replace(/\n/g,"\n  ")+";\n<\/script>\n\n"
+    : "";
+  const inject=settings+
+    '<link rel="stylesheet" href="'+CDN+'verticalAccordion.css">\n'+
+    '<script src="'+CDN+'verticalAccordion.js" defer><\/script>';
+  return {markup,inject};
+}
+
+/* ---------- wiring ---------- */
+function tog(btn){btn.parentElement.classList.toggle("closed");}
+function showTab(name){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.tab===name));
+  ["preview","code","install"].forEach(n=>$("pane-"+n).hidden = n!==name);
+  $("devtog").style.visibility = name==="preview" ? "visible" : "hidden";
+}
+function copyCode(){
+  const s=readSettings(), code=buildCode(s);
+  const text="<!-- 1 · Code Block on the page -->\n"+code.markup+
+    "\n\n<!-- 2 · Settings → Advanced → Code Injection → Footer -->\n"+code.inject;
+  navigator.clipboard.writeText(text).then(()=>{
+    const b=$("copyBtn"); b.classList.add("copied");
+    const label=b.lastChild; label.textContent=" Copied";
+    setTimeout(()=>{b.classList.remove("copied");label.textContent=" Copy code";},1400);
+  });
+}
+
+function sync(){
+  const s=readSettings();
+  updateVisibility(s);
+  $("pvUrl").textContent = s.source || "/portfolio";
+  const code=buildCode(s);
+  $("outMarkup").textContent=code.markup;
+  $("outInject").textContent=code.inject;
+  buildPreview(s);
+}
+
+renderColorRows();
+applyPreset("rails");
+showTab("preview");
+</script>
+</body>
+</html>

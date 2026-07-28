@@ -1,0 +1,7 @@
+.DS_Store
+node_modules/
+Thumbs.db
+
+# v0 reference files, kept locally only
+plugin.js
+plugin.css

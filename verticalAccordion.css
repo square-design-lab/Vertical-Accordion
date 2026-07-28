@@ -1,0 +1,634 @@
+/* ==========================================================================
+   SDL Vertical Accordion v1.0
+   All presentation is driven by custom properties set on .vertical-accordions
+   by verticalAccordion.js. Structural variants come from data-* on the mount.
+   ========================================================================== */
+
+[data-sdl-plugin="vertical-accordions"] {
+  --va-min-panel-height: 30vh;
+  --va-max-panel-height: 80vh;
+  --va-fixed-height: 620px;
+  --va-transition-duration: 500ms;
+  --va-easing: ease;
+  --va-panel-gap: 0px;
+  --va-border-color: currentColor;
+  --va-border-width: 1px;
+  --va-border-radius: 0px;
+  --va-icon-width: 24px;
+  --va-content-padding: 40px;
+  --va-accordion-title-padding: 16px;
+  --va-overlay-tint: 0;
+
+  display: block;
+  position: relative;
+}
+
+[data-sdl-plugin="vertical-accordions"] *,
+[data-sdl-plugin="vertical-accordions"] *::before,
+[data-sdl-plugin="vertical-accordions"] *::after {
+  box-sizing: border-box;
+}
+
+/* Full-bleed breakout of the site container */
+[data-sdl-plugin="vertical-accordions"].va-full-width {
+  width: 100vw;
+  max-width: none;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}
+
+/* --------------------------------------------------------------------------
+   Component
+   -------------------------------------------------------------------------- */
+
+[data-sdl-plugin="vertical-accordions"] .vertical-accordions {
+  display: flex;
+  width: 100%;
+  gap: var(--va-panel-gap);
+  position: relative;
+}
+
+/* Ungapped accordions read as one object: the border and radius live on the
+   wrapper. Gapped ones are separate cards, so each panel carries its own. */
+[data-sdl-plugin="vertical-accordions"]:not(.va-gapped) .vertical-accordions {
+  border: var(--va-border-width) solid var(--va-border-color);
+  border-radius: var(--va-border-radius);
+  overflow: hidden;
+}
+
+[data-sdl-plugin="vertical-accordions"].va-gapped .accordion-panel {
+  border: var(--va-border-width) solid var(--va-border-color);
+  border-radius: var(--va-border-radius);
+}
+
+[data-sdl-plugin="vertical-accordions"]:not(.va-gapped)
+  .accordion-panel:not(:first-child) {
+  border-left: var(--va-border-width) solid var(--va-border-color);
+}
+
+/* --------------------------------------------------------------------------
+   Panel
+   -------------------------------------------------------------------------- */
+
+[data-sdl-plugin="vertical-accordions"] .accordion-panel {
+  display: flex;
+  flex-direction: row;
+  flex: 0 0 auto;
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  background-color: var(--va-panel-background, transparent);
+  color: var(--va-panel-color, inherit);
+  transition: background-color var(--va-transition-duration) var(--va-easing);
+}
+
+[data-sdl-plugin="vertical-accordions"][data-rail-side="right"] .accordion-panel {
+  flex-direction: row-reverse;
+}
+
+[data-sdl-plugin="vertical-accordions"][data-height-mode="content"] .accordion-panel {
+  height: clamp(
+    var(--va-min-panel-height),
+    var(--va-tallest-panel-height, var(--va-min-panel-height)),
+    var(--va-max-panel-height)
+  );
+  min-height: var(--va-min-panel-height);
+}
+
+[data-sdl-plugin="vertical-accordions"][data-height-mode="fixed"] .accordion-panel {
+  height: var(--va-fixed-height);
+}
+
+/* No panel open — the rails share the width evenly. */
+[data-sdl-plugin="vertical-accordions"].va-none-active .accordion-panel {
+  flex: 1 1 0;
+}
+[data-sdl-plugin="vertical-accordions"].va-none-active .accordion-title {
+  flex: 1 1 auto;
+  width: auto !important;
+}
+
+/* --------------------------------------------------------------------------
+   Rail (the always-visible title button)
+   -------------------------------------------------------------------------- */
+
+[data-sdl-plugin="vertical-accordions"] .accordion-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  flex: 0 0 auto;
+  padding: var(--va-accordion-title-padding);
+  margin: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  overflow: hidden;
+  text-align: center;
+  transition: background-color var(--va-transition-duration) var(--va-easing);
+}
+
+[data-sdl-plugin="vertical-accordions"] .accordion-title:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -5px;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-rail__num {
+  flex: none;
+  font-size: var(--va-number-size, 1.1em);
+  font-weight: 600;
+  line-height: 1;
+  opacity: 0.85;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-sdl-plugin="vertical-accordions"] .accordion-title .text {
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  min-height: 0;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  color: var(--va-accordion-title-color, inherit);
+  font-family: var(--va-accordion-title-font-family, inherit);
+  font-size: var(--va-accordion-title-size, inherit);
+  text-transform: var(--va-accordion-title-text-transform, inherit);
+  letter-spacing: var(--va-accordion-title-letter-spacing, inherit);
+}
+
+[data-sdl-plugin="vertical-accordions"][data-title-align="start"] .accordion-title .text {
+  align-items: flex-start;
+}
+[data-sdl-plugin="vertical-accordions"][data-title-align="center"] .accordion-title .text {
+  align-items: center;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-rail__label {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-height: 100%;
+}
+
+/* Both reference builds read bottom-to-top. */
+[data-sdl-plugin="vertical-accordions"][data-text-direction="up"] .va-rail__label {
+  transform: rotate(180deg);
+}
+
+/* --------------------------------------------------------------------------
+   Icon
+   -------------------------------------------------------------------------- */
+
+[data-sdl-plugin="vertical-accordions"] .icon-wrapper {
+  flex: none;
+  display: grid;
+  place-items: center;
+  color: var(--va-accordion-title-color, inherit);
+}
+
+[data-sdl-plugin="vertical-accordions"][data-icon-placement="top"] .icon-wrapper {
+  order: -1;
+}
+[data-sdl-plugin="vertical-accordions"][data-icon-placement="top"] .va-rail__num {
+  order: -2;
+}
+
+[data-sdl-plugin="vertical-accordions"][data-icon-shape="circle"] .icon-wrapper,
+[data-sdl-plugin="vertical-accordions"][data-icon-shape="square"] .icon-wrapper {
+  padding: calc(var(--va-icon-width) * 0.42);
+  border: 1px solid currentColor;
+}
+[data-sdl-plugin="vertical-accordions"][data-icon-shape="circle"] .icon-wrapper {
+  border-radius: 50%;
+}
+[data-sdl-plugin="vertical-accordions"][data-icon-shape="square"] .icon-wrapper {
+  border-radius: 4px;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-icon--svg {
+  width: var(--va-icon-width);
+  height: var(--va-icon-width);
+  display: block;
+  transition: transform var(--va-transition-duration) var(--va-easing);
+}
+
+[data-sdl-plugin="vertical-accordions"] .panel-active .va-icon--svg {
+  transform: rotate(90deg);
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-icon--plus {
+  position: relative;
+  display: block;
+  width: var(--va-icon-width);
+  height: var(--va-icon-width);
+}
+[data-sdl-plugin="vertical-accordions"] .va-icon__h,
+[data-sdl-plugin="vertical-accordions"] .va-icon__v {
+  position: absolute;
+  background: currentColor;
+  transition: transform var(--va-transition-duration) var(--va-easing);
+}
+[data-sdl-plugin="vertical-accordions"] .va-icon__h {
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 1.5px;
+  transform: translateY(-50%);
+}
+[data-sdl-plugin="vertical-accordions"] .va-icon__v {
+  left: 50%;
+  top: 0;
+  width: 1.5px;
+  height: 100%;
+  transform: translateX(-50%);
+}
+[data-sdl-plugin="vertical-accordions"] .panel-active .va-icon__v {
+  transform: translateX(-50%) scaleY(0);
+}
+
+/* --------------------------------------------------------------------------
+   Content
+   -------------------------------------------------------------------------- */
+
+[data-sdl-plugin="vertical-accordions"] .accordion-content-wrapper {
+  flex: 0 0 auto;
+  width: 0;
+  overflow: hidden;
+  transition: width var(--va-transition-duration) var(--va-easing);
+}
+
+[data-sdl-plugin="vertical-accordions"] .panel-active .accordion-content-wrapper {
+  width: var(--va-active-width, 0px);
+}
+
+[data-sdl-plugin="vertical-accordions"] .accordion-content {
+  width: var(--va-active-width, 0px);
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   Field card (every collection except portfolio)
+   -------------------------------------------------------------------------- */
+
+[data-sdl-plugin="vertical-accordions"] .va-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding: var(--va-content-padding);
+  gap: 1.2em;
+}
+
+[data-sdl-plugin="vertical-accordions"][data-content-align="top"] .va-card {
+  justify-content: flex-start;
+}
+[data-sdl-plugin="vertical-accordions"][data-content-align="center"] .va-card {
+  justify-content: center;
+}
+[data-sdl-plugin="vertical-accordions"][data-content-align="bottom"] .va-card {
+  justify-content: flex-end;
+}
+
+/* The image is an absolutely-filled frame rather than an in-flow block. A
+   percentage-height image inside an auto-height card has no resolvable size,
+   which makes the "grow to fit the content" measurement oscillate. */
+[data-sdl-plugin="vertical-accordions"] .va-card__media {
+  position: relative;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-card__media img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* cover — the image becomes the panel background and the text sits on top */
+[data-sdl-plugin="vertical-accordions"] .va-card__media[data-fit="cover"] {
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+}
+[data-sdl-plugin="vertical-accordions"] .va-card__media[data-fit="cover"] img {
+  object-fit: cover;
+}
+
+/* contain — takes the leftover height in a fixed-height panel, and exactly the
+   set height when the panel grows to fit its content. */
+[data-sdl-plugin="vertical-accordions"] .va-card__media[data-fit="contain"] {
+  flex: 1 1 auto;
+  min-height: var(--va-media-height, 240px);
+}
+[data-sdl-plugin="vertical-accordions"] .va-card__media[data-fit="inline"] {
+  flex: 0 0 auto;
+  height: var(--va-media-height, 200px);
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-card__tint {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: var(--va-overlay-tint, 0);
+  pointer-events: none;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-card__body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.7em;
+  flex: 0 0 auto;
+  max-width: 62ch;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-card__num {
+  font-size: var(--va-number-size, 1.1em);
+  font-weight: 600;
+  line-height: 1;
+  opacity: 0.85;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-card__title {
+  margin: 0;
+  color: inherit;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-card__excerpt {
+  margin: 0;
+  font-size: var(--va-excerpt-size, inherit);
+  opacity: 0.88;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-card__link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-card__btn {
+  display: inline-block;
+  text-decoration: none;
+}
+
+/* --------------------------------------------------------------------------
+   Injected page sections (portfolio)
+   -------------------------------------------------------------------------- */
+
+[data-sdl-plugin="vertical-accordions"] #sections {
+  display: grid;
+  min-height: 100%;
+}
+
+[data-sdl-plugin="vertical-accordions"] #sections > section:first-child {
+  padding-top: 0;
+}
+
+[data-sdl-plugin="vertical-accordions"] .accordion-content > [data-type="item"] {
+  padding: 3.3vmax;
+}
+
+[data-sdl-plugin="vertical-accordions"] .accordion-content > [data-type="item"] .sqs-block {
+  box-sizing: border-box;
+  padding: 17px;
+}
+
+/* Classic editor blocks inside a fluid-engine section */
+[data-sdl-plugin="vertical-accordions"] .sqs-block-image .design-layout-fluid img {
+  height: auto;
+}
+
+#siteWrapper
+  [data-fluid-engine="true"]
+  [data-sdl-plugin="vertical-accordions"]
+  .content-wrapper:has(.sqs-layout) {
+  padding: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Per-panel colours (1–12)
+   -------------------------------------------------------------------------- */
+
+[data-sdl-plugin="vertical-accordions"] .accordion-panel:nth-of-type(1) {
+  --va-panel-background: var(--va-panel-1-background);
+  --va-panel-color: var(--va-panel-1-color);
+  --va-panel-hover: var(--va-panel-hover-1-background, var(--va-panel-1-background));
+}
+[data-sdl-plugin="vertical-accordions"] .accordion-panel:nth-of-type(2) {
+  --va-panel-background: var(--va-panel-2-background);
+  --va-panel-color: var(--va-panel-2-color);
+  --va-panel-hover: var(--va-panel-hover-2-background, var(--va-panel-2-background));
+}
+[data-sdl-plugin="vertical-accordions"] .accordion-panel:nth-of-type(3) {
+  --va-panel-background: var(--va-panel-3-background);
+  --va-panel-color: var(--va-panel-3-color);
+  --va-panel-hover: var(--va-panel-hover-3-background, var(--va-panel-3-background));
+}
+[data-sdl-plugin="vertical-accordions"] .accordion-panel:nth-of-type(4) {
+  --va-panel-background: var(--va-panel-4-background);
+  --va-panel-color: var(--va-panel-4-color);
+  --va-panel-hover: var(--va-panel-hover-4-background, var(--va-panel-4-background));
+}
+[data-sdl-plugin="vertical-accordions"] .accordion-panel:nth-of-type(5) {
+  --va-panel-background: var(--va-panel-5-background);
+  --va-panel-color: var(--va-panel-5-color);
+  --va-panel-hover: var(--va-panel-hover-5-background, var(--va-panel-5-background));
+}
+[data-sdl-plugin="vertical-accordions"] .accordion-panel:nth-of-type(6) {
+  --va-panel-background: var(--va-panel-6-background);
+  --va-panel-color: var(--va-panel-6-color);
+  --va-panel-hover: var(--va-panel-hover-6-background, var(--va-panel-6-background));
+}
+[data-sdl-plugin="vertical-accordions"] .accordion-panel:nth-of-type(7) {
+  --va-panel-background: var(--va-panel-7-background);
+  --va-panel-color: var(--va-panel-7-color);
+  --va-panel-hover: var(--va-panel-hover-7-background, var(--va-panel-7-background));
+}
+[data-sdl-plugin="vertical-accordions"] .accordion-panel:nth-of-type(8) {
+  --va-panel-background: var(--va-panel-8-background);
+  --va-panel-color: var(--va-panel-8-color);
+  --va-panel-hover: var(--va-panel-hover-8-background, var(--va-panel-8-background));
+}
+[data-sdl-plugin="vertical-accordions"] .accordion-panel:nth-of-type(9) {
+  --va-panel-background: var(--va-panel-9-background);
+  --va-panel-color: var(--va-panel-9-color);
+  --va-panel-hover: var(--va-panel-hover-9-background, var(--va-panel-9-background));
+}
+[data-sdl-plugin="vertical-accordions"] .accordion-panel:nth-of-type(10) {
+  --va-panel-background: var(--va-panel-10-background);
+  --va-panel-color: var(--va-panel-10-color);
+  --va-panel-hover: var(--va-panel-hover-10-background, var(--va-panel-10-background));
+}
+[data-sdl-plugin="vertical-accordions"] .accordion-panel:nth-of-type(11) {
+  --va-panel-background: var(--va-panel-11-background);
+  --va-panel-color: var(--va-panel-11-color);
+  --va-panel-hover: var(--va-panel-hover-11-background, var(--va-panel-11-background));
+}
+[data-sdl-plugin="vertical-accordions"] .accordion-panel:nth-of-type(12) {
+  --va-panel-background: var(--va-panel-12-background);
+  --va-panel-color: var(--va-panel-12-color);
+  --va-panel-hover: var(--va-panel-hover-12-background, var(--va-panel-12-background));
+}
+
+#siteWrapper
+  [data-sdl-plugin="vertical-accordions"]
+  .accordion-panel:not(.panel-active):hover {
+  background-color: var(--va-panel-hover, var(--va-panel-background, transparent));
+}
+
+/* --------------------------------------------------------------------------
+   Mobile — stacked accordion (class is toggled by JS at the configured
+   breakpoint, so the breakpoint stays a setting rather than a media query)
+   -------------------------------------------------------------------------- */
+
+[data-sdl-plugin="vertical-accordions"].va-mobile .vertical-accordions {
+  flex-direction: column;
+}
+
+[data-sdl-plugin="vertical-accordions"].va-mobile .accordion-panel {
+  flex-direction: column;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+}
+
+[data-sdl-plugin="vertical-accordions"].va-mobile.va-none-active .accordion-panel {
+  flex: 0 0 auto;
+}
+
+[data-sdl-plugin="vertical-accordions"]:not(.va-gapped).va-mobile
+  .accordion-panel:not(:first-child) {
+  border-left: 0;
+  border-top: var(--va-border-width) solid var(--va-border-color);
+}
+
+[data-sdl-plugin="vertical-accordions"].va-mobile .accordion-title {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100% !important;
+  gap: 12px;
+  text-align: left;
+}
+
+[data-sdl-plugin="vertical-accordions"].va-mobile .accordion-title .text {
+  align-items: center;
+  justify-content: flex-start;
+  flex: 1 1 auto;
+}
+
+[data-sdl-plugin="vertical-accordions"].va-mobile .va-rail__label {
+  writing-mode: horizontal-tb;
+  transform: none;
+  white-space: normal;
+  text-overflow: clip;
+  max-height: none;
+}
+
+[data-sdl-plugin="vertical-accordions"].va-mobile .icon-wrapper {
+  order: 0;
+  margin-left: auto;
+}
+[data-sdl-plugin="vertical-accordions"].va-mobile .va-rail__num {
+  order: -1;
+}
+
+[data-sdl-plugin="vertical-accordions"].va-mobile .panel-active .va-icon--svg {
+  transform: rotate(180deg);
+}
+
+[data-sdl-plugin="vertical-accordions"].va-mobile .accordion-content-wrapper {
+  width: 100% !important;
+  max-height: 0;
+  transition: max-height var(--va-transition-duration) var(--va-easing);
+}
+
+[data-sdl-plugin="vertical-accordions"].va-mobile
+  .panel-active
+  .accordion-content-wrapper {
+  max-height: calc(var(--va-active-height, 60vh) + 2px);
+}
+
+[data-sdl-plugin="vertical-accordions"].va-mobile .accordion-content {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+[data-sdl-plugin="vertical-accordions"].va-mobile .va-card {
+  min-height: 0;
+  padding: max(20px, calc(var(--va-content-padding) * 0.6));
+}
+
+[data-sdl-plugin="vertical-accordions"].va-mobile .va-card__media[data-fit="cover"] {
+  position: relative;
+  inset: auto;
+  height: 220px;
+  order: -1;
+}
+[data-sdl-plugin="vertical-accordions"].va-mobile .va-card__media[data-fit="contain"],
+[data-sdl-plugin="vertical-accordions"].va-mobile .va-card__media[data-fit="inline"] {
+  flex: 0 0 auto;
+  height: min(var(--va-media-height, 200px), 220px);
+  min-height: 0;
+}
+
+[data-sdl-plugin="vertical-accordions"].va-mobile .va-card__body {
+  max-width: none;
+}
+
+[data-sdl-plugin="vertical-accordions"].va-mobile #sections {
+  max-height: none;
+}
+
+/* --------------------------------------------------------------------------
+   Reduced motion
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  [data-sdl-plugin="vertical-accordions"] .accordion-content-wrapper,
+  [data-sdl-plugin="vertical-accordions"] .accordion-panel,
+  [data-sdl-plugin="vertical-accordions"] .va-icon--svg,
+  [data-sdl-plugin="vertical-accordions"] .va-icon__h,
+  [data-sdl-plugin="vertical-accordions"] .va-icon__v {
+    transition-duration: 1ms !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Squarespace editor placeholder
+   -------------------------------------------------------------------------- */
+
+.sqs-edit-mode-active .code-block [data-sdl-plugin="vertical-accordions"] {
+  color: transparent;
+  background: transparent;
+  font-size: 0;
+  position: absolute;
+  line-height: 0;
+  width: 100%;
+  height: 25px;
+  border: 1px dashed var(--headingLargeColor);
+}
+
+.sqs-edit-mode-active .code-block [data-sdl-plugin="vertical-accordions"]::after {
+  content: "Vertical Accordion";
+  color: var(--headingLargeColor);
+  font-size: 12px;
+  position: absolute;
+  top: 50%;
+  transform: translateX(25%);
+}
