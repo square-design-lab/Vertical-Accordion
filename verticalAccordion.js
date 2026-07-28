@@ -48,6 +48,10 @@
     mediaRadius: 0,
     mediaBorderWidth: 0,
     mediaBorderColor: "currentColor",
+    // Text sitting on top of a full-panel image needs its own colour: the panel
+    // background it would otherwise inherit from is hidden behind the photo.
+    overlayText: "light", // light | dark | custom | auto (follow the panel colour)
+    overlayTextColor: "#ffffff",
     showButton: true,
     buttonLabel: "Read more",
     buttonTarget: "_self",
@@ -104,6 +108,8 @@
     colorMode: "theme", // theme | section | ramp | custom
     rampFrom: "#f2f2f2",
     rampTo: "#111111",
+    rampTextMode: "auto", // auto (contrast with each step) | custom
+    rampTextColor: "#ffffff",
     panelColors: [], // [{ bg, hover, text }]
     titleColor: "",
     titleFontFamily: "",
@@ -839,6 +845,16 @@
     );
   }
 
+  // True when the image fills the panel and the words sit on top of it.
+  function textSitsOnImage(item, settings) {
+    return !!(
+      settings.showImage &&
+      item.image &&
+      settings.cardLayout !== "split" &&
+      settings.imageFit === "cover"
+    );
+  }
+
   function cardMarkup(item, index, settings) {
     const number = formatNumber(index, settings.showNumber);
     const rawText = settings.textSource === "body" ? item.body || item.excerpt : item.excerpt || item.body;
@@ -874,7 +890,9 @@
     }
 
     return (
-      '<article class="va-card">' +
+      '<article class="va-card"' +
+      (textSitsOnImage(item, settings) ? ' data-over-image="true"' : "") +
+      ">" +
       media +
       '<div class="va-card__body">' + parts.filter(Boolean).join("") + "</div>" +
       "</article>"
@@ -921,6 +939,14 @@
    *  Styling — settings become CSS custom properties
    * ------------------------------------------------------------------ */
 
+  // The colour for text laid over a full-panel image.
+  function overlayTextColor(settings) {
+    if (settings.overlayText === "custom") return settings.overlayTextColor || "#ffffff";
+    if (settings.overlayText === "dark") return "#111111";
+    if (settings.overlayText === "auto") return "";
+    return "#ffffff";
+  }
+
   function applyStyleVars(root, component, settings, panelCount) {
     const set = (name, value) => {
       if (value === "" || value == null) component.style.removeProperty(name);
@@ -958,6 +984,7 @@
     set("--va-price-size", settings.priceSize);
     set("--va-icon-width", toLength(settings.iconSize, "24px"));
     set("--va-overlay-tint", String(toNumber(settings.overlayTint, 0) / 100));
+    set("--va-overlay-text", overlayTextColor(settings));
 
     root.dataset.layout = settings.layout;
     root.dataset.railSide = settings.railSide;
@@ -987,7 +1014,12 @@
         const light = isLight(bg);
         set("--va-panel-" + (i + 1) + "-background", bg);
         set("--va-panel-hover-" + (i + 1) + "-background", shade(bg, light ? -0.08 : 0.12));
-        set("--va-panel-" + (i + 1) + "-color", light ? "#111111" : "#ffffff");
+        set(
+          "--va-panel-" + (i + 1) + "-color",
+          settings.rampTextMode === "custom"
+            ? settings.rampTextColor || "#ffffff"
+            : light ? "#111111" : "#ffffff"
+        );
       }
     } else if (settings.colorMode === "custom") {
       (settings.panelColors || []).slice(0, MAX_PANELS).forEach((entry, i) => {
@@ -1051,10 +1083,24 @@
    *  Instance
    * ------------------------------------------------------------------ */
 
+  // "Use the theme's text colour" means the surrounding section's text colour —
+  // right when the panels are transparent, wrong once they carry their own
+  // colours, where it leaves a page-coloured box drawn around them. Once panels
+  // are coloured, the frame follows the first panel's text colour instead.
+  function resolveInheritedBorder(component, settings) {
+    if (settings.borderColor !== "currentColor") return;
+    if (settings.colorMode === "theme") return;
+    const firstText = component.style.getPropertyValue("--va-panel-1-color").trim();
+    if (firstText) component.style.setProperty("--va-border-color", firstText);
+  }
+
   function createAccordion(root, settings, items, mode) {
     const controller = new AbortController();
     const signal = controller.signal;
     const uid = root.id || "va-" + Math.random().toString(36).slice(2, 9);
+
+    // Held until the first open has been painted; see .va-booting in the CSS.
+    root.classList.add("va-booting");
 
     root.innerHTML =
       '<div class="vertical-accordions" data-mode="' + mode + '">' +
@@ -1068,6 +1114,7 @@
 
     applyStyleVars(root, component, settings, panels.length);
     applySectionColors(component, settings, items);
+    resolveInheritedBorder(component, settings);
 
     let activeIndex = -1;
     let autoplayTimer = null;
@@ -1378,6 +1425,10 @@
 
     measure();
     open(initialIndex(), { silent: true });
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => root.classList.remove("va-booting"));
+    });
 
     emitEvent(PLUGIN_TITLE + ":loaded", { container: root, count: panels.length }, root);
 

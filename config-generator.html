@@ -97,7 +97,7 @@
           border:1px solid var(--line);border-radius:99px;font:12.5px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted)}
   .urlbar b{color:var(--ink);font-weight:600}
   .pv-note{font-size:12px;color:var(--muted);margin:0 0 12px}
-  .pv-wrap{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;
+  .pv-wrap{background:#fffef5;border:1px solid var(--line);border-radius:12px;overflow:hidden;
     box-shadow:0 1px 2px rgba(16,20,28,.05),0 8px 24px -18px rgba(16,20,28,.35)}
   .pv-scroll{position:relative;overflow:auto;padding:28px 0;max-height:calc(100vh - 200px)}
   .pv-scroll::-webkit-scrollbar{width:10px;height:10px}
@@ -124,7 +124,9 @@
   code.inl{background:var(--accent-soft);padding:1px 5px;border-radius:4px;font-size:12.5px}
 
   /* ---- preview host: gives the plugin CSS the site context it expects ---- */
-  #siteWrapper{color:#16181d;background:#fff;font-family:inherit}
+  /* Stands in for a Squarespace section theme so currentColor-based options
+     (borders, icons, dividers) resolve to a real theme colour. */
+  #siteWrapper{color:#151414;background:#fffef5;font-family:inherit}
   /* Stands in for the site's content container so "break out to full width"
      has something to break out of. The plugin's real rule uses 100vw, which
      would escape this pane — here it breaks out to the pane instead. */
@@ -231,9 +233,16 @@
   border-radius: var(--va-border-radius);
 }
 
+/* The divider sits on a panel, so it takes that panel's own text colour rather
+   than the page's — otherwise a coloured panel gets a page-coloured hairline. */
 [data-sdl-plugin="vertical-accordions"]:not(.va-gapped)
   .accordion-panel:not(:first-child) {
-  border-left: var(--va-border-width) solid var(--va-border-color);
+  border-left: var(--va-border-width) solid var(--va-divider-color, var(--va-border-color));
+}
+
+[data-sdl-plugin="vertical-accordions"]:not([data-color-mode="theme"])
+  .accordion-panel {
+  --va-divider-color: currentColor;
 }
 
 /* --------------------------------------------------------------------------
@@ -492,6 +501,9 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
+  /* A contained image in a full-width frame would float to the centre while the
+     words below it start at the left edge. Anchor it to the same edge. */
+  object-position: left center;
 }
 
 /* cover — the image becomes the panel background and the text sits on top */
@@ -570,6 +582,27 @@
   background: #000;
   opacity: var(--va-overlay-tint, 0);
   pointer-events: none;
+}
+
+/* Words on top of a photo can't take their colour from the panel background —
+   it's behind the image. They use the overlay colour instead. */
+[data-sdl-plugin="vertical-accordions"] .va-card[data-over-image="true"] .va-card__body {
+  color: var(--va-overlay-text, #ffffff);
+}
+
+[data-sdl-plugin="vertical-accordions"]
+  .va-card[data-over-image="true"]
+  .va-card__body
+  .va-card__title {
+  color: inherit;
+}
+
+[data-sdl-plugin="vertical-accordions"]
+  .va-card[data-over-image="true"]
+  .sqs-button-element--primary {
+  background-color: var(--va-overlay-text, #ffffff);
+  border-color: var(--va-overlay-text, #ffffff);
+  color: var(--va-panel-background, #111111);
 }
 
 [data-sdl-plugin="vertical-accordions"] .va-card__body {
@@ -907,6 +940,14 @@
   max-height: none;
 }
 
+/* First paint: panels are inserted before their colours and widths are known, so
+   without this every panel would visibly fade up from transparent and the open
+   one would slide open on load. */
+[data-sdl-plugin="vertical-accordions"].va-booting *,
+[data-sdl-plugin="vertical-accordions"].va-booting {
+  transition: none !important;
+}
+
 /* --------------------------------------------------------------------------
    Reduced motion
    -------------------------------------------------------------------------- */
@@ -1124,10 +1165,26 @@
           </div>
           <div class="tog" id="rowMediaBorderInherit"><label>Border follows the panel colour</label>
             <span class="sw"><input type="checkbox" id="mediaBorderInherit" checked onchange="sync()"><span></span></span></div>
-          <div class="row" id="rowTint">
-            <label>Darken behind the text (%)</label>
-            <input type="number" id="overlayTint" value="0" min="0" max="90" oninput="sync()">
-            <div class="hint">Only applies when the image fills the panel.</div>
+          <div id="overArea" hidden style="display:grid;gap:13px">
+            <div class="note">The words sit on top of the photo here, so they need their own colour \u2014 the panel colour behind them is hidden.</div>
+            <div class="row">
+              <label>Text over the image</label>
+              <select id="overlayText" onchange="sync()">
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+                <option value="custom">A colour I pick</option>
+                <option value="auto">Follow the panel colour</option>
+              </select>
+            </div>
+            <div class="row" id="rowOverlayTextColor" hidden>
+              <label>Overlay text colour</label>
+              <input type="color" id="overlayTextColor" value="#ffffff" oninput="sync()">
+            </div>
+            <div class="row">
+              <label>Darken the image behind the text (%)</label>
+              <input type="number" id="overlayTint" value="0" min="0" max="90" oninput="sync()">
+              <div class="hint">A little goes a long way on a busy photograph.</div>
+            </div>
           </div>
           <div class="subhead">Button</div>
           <div class="tog"><label>Show a button</label>
@@ -1192,7 +1249,7 @@
           </div>
 
           <div class="tog"><label>Separate the panels with a gap</label>
-            <span class="sw"><input type="checkbox" id="showGap" onchange="sync()"><span></span></span></div>
+            <span class="sw"><input type="checkbox" id="showGap" onchange="onGapToggle()"><span></span></span></div>
           <div class="hint">Off, the panels sit flush as one block. On, each becomes its own card.</div>
           <div class="two">
             <div class="row" id="rowPanelGap" hidden><label>Gap (px)</label>
@@ -1203,8 +1260,9 @@
             <div class="row"><label>Border width (px)</label><input type="number" id="borderWidth" value="1" min="0" oninput="sync()"></div>
             <div class="row"><label>Border colour</label><input type="color" id="borderColor" value="#111111" oninput="sync()"></div>
           </div>
-          <div class="tog"><label>Use the theme's text colour for the border</label>
+          <div class="tog"><label>Border follows the text colour</label>
             <span class="sw"><input type="checkbox" id="borderInherit" checked onchange="sync()"><span></span></span></div>
+          <div class="hint" id="borderInheritHint"></div>
 
           <div class="row"><label>Padding inside the open panel (px)</label>
             <input type="number" id="contentPadding" value="40" min="0" oninput="sync()"></div>
@@ -1261,7 +1319,18 @@
             <div class="row"><label>First panel</label><input type="color" id="rampFrom" value="#f2f2f2" oninput="sync()"></div>
             <div class="row"><label>Last panel</label><input type="color" id="rampTo" value="#111111" oninput="sync()"></div>
           </div>
-          <div class="hint" id="rampHint" hidden>Text colour is chosen automatically for contrast on each step.</div>
+          <div class="row" id="rowRampText" hidden>
+            <label>Text on those panels</label>
+            <select id="rampTextMode" onchange="sync()">
+              <option value="auto">Automatic \u2014 contrast with each step</option>
+              <option value="custom">One colour I pick</option>
+            </select>
+          </div>
+          <div class="row" id="rowRampTextColor" hidden>
+            <label>Text colour</label>
+            <input type="color" id="rampTextColor" value="#ffffff" oninput="sync()">
+            <div class="hint">Check it against both ends of the blend.</div>
+          </div>
           <div id="customArea" hidden style="display:grid;gap:8px">
             <div class="cphead"><span></span><span>Background</span><span>Hover</span><span>Text</span><span></span></div>
             <div class="glist" id="colorList"></div>
@@ -1516,7 +1585,8 @@ const DEFAULTS = {
   showNumberInRail: true, showTitleInPanel: true, showExcerpt: true, excerptLength: 240,
   showImage: true, cardLayout: "stacked", splitSide: "left", splitRatio: 50,
   imageFit: "cover", mediaHeight: 240, mediaRadius: 0, mediaBorderWidth: 0,
-  mediaBorderColor: "currentColor", showButton: true, buttonLabel: "Read more",
+  mediaBorderColor: "currentColor", overlayText: "light", overlayTextColor: "#ffffff",
+  showButton: true, buttonLabel: "Read more",
   buttonTarget: "_self", buttonStyle: "primary",
   textSource: "excerpt", showCategories: false, showTags: false, showPrice: false,
   showDate: false, showAuthor: false, metaStyle: "pill", metaPosition: "above",
@@ -1530,6 +1600,7 @@ const DEFAULTS = {
   easing: "ease", scrollToOnOpen: true, scrollOffset: 0, updateUrl: false,
   keyboardNav: true, respectReducedMotion: true, mobileBreakpoint: 767,
   mobileLayout: "stacked", colorMode: "theme", rampFrom: "#f2f2f2", rampTo: "#111111",
+  rampTextMode: "auto", rampTextColor: "#ffffff",
   panelColors: [], titleColor: "", titleFontFamily: "", titleSize: "",
   titleTextTransform: "", titleLetterSpacing: "", titlePadding: 16, numberSize: "",
   excerptSize: "", metaSize: "", priceSize: "", iconStyle: "plus", icon: "", iconPlacement: "bottom",
@@ -1621,7 +1692,9 @@ function cardMarkup(item,index,s){
   if(s.showButton&&item.fullUrl)parts.push('<a class="'+buttonClassFor(s.buttonStyle)+'" href="'+escapeHtml(item.fullUrl)+
     '" target="'+escapeHtml(s.buttonTarget)+'"'+(s.buttonTarget==="_blank"?' rel="noopener noreferrer"':"")+">"+
     escapeHtml(s.buttonLabel||"Read more")+"</a>");
-  return '<article class="va-card">'+media+'<div class="va-card__body">'+parts.filter(Boolean).join("")+"</div></article>";
+  const overImage = s.showImage && item.image && s.cardLayout!=="split" && s.imageFit==="cover";
+  return '<article class="va-card"'+(overImage?' data-over-image="true"':"")+">"+
+    media+'<div class="va-card__body">'+parts.filter(Boolean).join("")+"</div></article>";
 }
 function panelMarkup(item,index,s,mode,uid){
   const railTitle=titleFor(item,index,s);
@@ -1670,6 +1743,9 @@ function applyStyleVars(root,component,s,panelCount){
   set("--va-price-size",s.priceSize);
   set("--va-icon-width",toLength(s.iconSize,"24px"));
   set("--va-overlay-tint",String(toNumber(s.overlayTint,0)/100));
+  set("--va-overlay-text", s.overlayText==="custom" ? (s.overlayTextColor||"#ffffff")
+    : s.overlayText==="dark" ? "#111111"
+    : s.overlayText==="auto" ? "" : "#ffffff");
   root.dataset.layout=s.layout; root.dataset.railSide=s.railSide;
   root.dataset.textDirection=s.verticalTextDirection; root.dataset.titleAlign=s.titleAlign;
   root.dataset.contentAlign=s.contentAlign; root.dataset.iconPlacement=s.iconPlacement;
@@ -1689,7 +1765,8 @@ function applyStyleVars(root,component,s,panelCount){
       const bg=mixColors(s.rampFrom,s.rampTo,panelCount===1?0:i/steps), light=isLight(bg);
       set("--va-panel-"+(i+1)+"-background",bg);
       set("--va-panel-hover-"+(i+1)+"-background",shade(bg,light?-0.08:0.12));
-      set("--va-panel-"+(i+1)+"-color",light?"#111111":"#ffffff");
+      set("--va-panel-"+(i+1)+"-color", s.rampTextMode==="custom"
+        ? (s.rampTextColor||"#ffffff") : (light?"#111111":"#ffffff"));
     }
   }else if(s.colorMode==="section"){
     (s.__items||[]).slice(0,MAX_PANELS).forEach((it,i)=>{
@@ -1723,7 +1800,8 @@ function placeholderImage(i,label){
     '<text x="400" y="320" font-family="sans-serif" font-size="52" font-weight="600" fill="rgba(255,255,255,.85)" text-anchor="middle">'+label+'</text></svg>';
   return "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg);
 }
-const SECTION_COLORS=["#12312a","#f4f1ea","#2f4858","#e8ded1","#1b1b1b","#dfe6e2","#3d2b1f","#eef2f5","#22333b","#f6e9e0","#2b2d42","#edf2f4"];
+const SECTION_COLORS=["#f6f3ec","#e8e2d6","#d7cfbe","#b9b3a1","#8d8878",
+  "#5f6b60","#3f4a41","#2f4858","#22333b","#1e2621","#171a17","#111111"];
 const money=v=>({display:new Intl.NumberFormat(navigator.language||"en",{style:"currency",currency:"USD"}).format(v),ranged:false,onSale:false,sale:""});
 
 const SAMPLES={
@@ -1871,6 +1949,8 @@ function readSettings(){
     mediaRadius:num("mediaRadius"),
     mediaBorderWidth:num("mediaBorderWidth"),
     mediaBorderColor:chk("mediaBorderInherit")?"currentColor":val("mediaBorderColor"),
+    overlayText:val("overlayText"),
+    overlayTextColor:val("overlayTextColor"),
     showButton:chk("showButton"),
     buttonLabel:val("buttonLabel"),
     buttonTarget:val("buttonTarget"),
@@ -1911,6 +1991,8 @@ function readSettings(){
     colorMode:val("colorMode"),
     rampFrom:val("rampFrom"),
     rampTo:val("rampTo"),
+    rampTextMode:val("rampTextMode"),
+    rampTextColor:val("rampTextColor"),
     panelColors:val("colorMode")==="custom"
       ? customColors.filter(c=>c.bg).map(c=>{
           const out={bg:c.bg};
@@ -1989,33 +2071,44 @@ function onTypeChange(){
 }
 function pickType(t){ $("collectionType").value=t; onTypeChange(); }
 
+// Flush panels need a hairline to read as separate; separated cards don't.
+function onGapToggle(){
+  if($("showGap").checked){
+    if(num("borderWidth")===1) $("borderWidth").value=0;
+  }else if(num("borderWidth")===0){
+    $("borderWidth").value=1;
+  }
+  sync();
+}
+
 /* ---------- presets ---------- */
 let currentPreset="rails";
 const DESIGNS={
   rails:{ label:"Rails", sub:"Coloured panels, numbered",
     art:['#12312a 5','#2f6350 1','#8d9d92 1','#f26522 1'], radius:14, gap:true,
-    values:{heightMode:"fixed",fixedHeight:"620px",showGap:false,panelGap:8,borderRadius:14,borderWidth:0,
+    values:{heightMode:"fixed",fixedHeight:"78vh",showGap:false,panelGap:8,borderRadius:0,borderWidth:1,
       showNumber:"pad",showNumberInRail:true,iconShape:"circle",iconPlacement:"bottom",
-      contentAlign:"bottom",titleAlign:"end",cardLayout:"stacked",imageFit:"contain",mediaHeight:300,overlayTint:0,
+      contentAlign:"bottom",titleAlign:"end",cardLayout:"stacked",imageFit:"contain",mediaHeight:170,overlayTint:0,
       colorMode:"custom",fullWidth:false,contentPadding:40,railWidthMode:"equal",
       metaStyle:"pill",metaPosition:"above",buttonStyle:"primary"} },
   fullbleed:{ label:"Full bleed", sub:"Edge to edge, full height",
     art:['#111111 5','#e2e2e2 1','#cacaca 1','#b2b2b2 1'], radius:0, gap:false,
-    values:{heightMode:"fixed",fixedHeight:"100vh",showGap:false,panelGap:8,borderRadius:0,borderWidth:0,
+    values:{heightMode:"fixed",fixedHeight:"78vh",showGap:false,panelGap:8,borderRadius:0,borderWidth:1,
       showNumber:"none",iconShape:"bare",iconPlacement:"bottom",contentAlign:"bottom",
-      titleAlign:"end",cardLayout:"stacked",imageFit:"cover",overlayTint:35,colorMode:"ramp",fullWidth:true,
+      titleAlign:"end",cardLayout:"stacked",imageFit:"cover",overlayTint:42,
+      overlayText:"light",colorMode:"ramp",rampTextMode:"auto",fullWidth:true,
       contentPadding:56,railWidthMode:"fixed",railWidthPx:70,
       metaStyle:"plain",metaPosition:"above",buttonStyle:"secondary"} },
   minimal:{ label:"Minimal", sub:"Hairlines, theme colours",
     art:['#ffffff 5','#ffffff 1','#ffffff 1','#ffffff 1'], radius:0, gap:false, outline:true,
-    values:{heightMode:"content",showGap:false,panelGap:8,borderRadius:0,borderWidth:1,showNumber:"none",
+    values:{heightMode:"fixed",fixedHeight:"78vh",showGap:false,panelGap:8,borderRadius:0,borderWidth:1,showNumber:"none",
       iconShape:"bare",iconPlacement:"top",contentAlign:"top",titleAlign:"center",
-      cardLayout:"stacked",imageFit:"inline",mediaHeight:200,overlayTint:0,colorMode:"theme",fullWidth:false,
+      cardLayout:"stacked",imageFit:"inline",mediaHeight:160,overlayTint:0,colorMode:"theme",fullWidth:false,
       contentPadding:36,railWidthMode:"equal",
       metaStyle:"plain",metaPosition:"below",buttonStyle:"link"} },
   editorial:{ label:"Editorial", sub:"Two columns, photo led",
     art:['#2f4858 5','#e8ded1 1','#1b1b1b 1','#dfe6e2 1'], radius:0, gap:false,
-    values:{heightMode:"fixed",fixedHeight:"78vh",showGap:false,panelGap:8,borderRadius:0,borderWidth:0,
+    values:{heightMode:"fixed",fixedHeight:"78vh",showGap:false,panelGap:8,borderRadius:0,borderWidth:1,
       showNumber:"none",iconShape:"bare",iconPlacement:"bottom",contentAlign:"bottom",
       titleAlign:"end",cardLayout:"split",splitSide:"left",splitRatio:50,imageFit:"cover",
       mediaRadius:0,mediaBorderWidth:0,overlayTint:0,colorMode:"section",fullWidth:false,
@@ -2024,7 +2117,7 @@ const DESIGNS={
       showCategories:true,showDate:true,showTags:false,showAuthor:false} },
   catalogue:{ label:"Catalogue", sub:"Image beside price and title",
     art:['#f4f1ea 5','#e8ded1 1','#dfe6e2 1','#eef2f5 1'], radius:10, gap:true,
-    values:{heightMode:"fixed",fixedHeight:"560px",showGap:false,panelGap:6,borderRadius:10,borderWidth:1,
+    values:{heightMode:"fixed",fixedHeight:"78vh",showGap:false,panelGap:6,borderRadius:0,borderWidth:1,
       showNumber:"none",iconShape:"square",iconPlacement:"bottom",contentAlign:"bottom",
       titleAlign:"end",cardLayout:"split",splitSide:"left",splitRatio:52,imageFit:"contain",
       mediaHeight:280,mediaRadius:8,mediaBorderWidth:0,overlayTint:0,colorMode:"theme",
@@ -2132,8 +2225,9 @@ function updateVisibility(s){
   $("rowMediaFrame").hidden = !fields || !s.showImage;
   $("rowMediaBorderInherit").hidden = !fields || !s.showImage || num("mediaBorderWidth")<=0;
   $("rowMediaBorderColor").hidden = $("rowMediaBorderInherit").hidden || chk("mediaBorderInherit");
-  $("rowTint").hidden = !fields || !s.showImage ||
-    !(s.cardLayout!=="split" && s.imageFit==="cover");
+  const overImage = fields && s.showImage && s.cardLayout!=="split" && s.imageFit==="cover";
+  $("overArea").hidden = !overImage;
+  $("rowOverlayTextColor").hidden = !overImage || s.overlayText!=="custom";
   $("btnArea").hidden = !s.showButton;
 
   /* --- layout --- */
@@ -2142,10 +2236,15 @@ function updateVisibility(s){
   $("rowMinMax").hidden = s.heightMode==="fixed";
   $("rowRailWidth").hidden = val("railWidthMode")!=="fixed";
   $("borderColor").parentElement.hidden = chk("borderInherit");
+  $("borderInheritHint").hidden = !chk("borderInherit");
+  $("borderInheritHint").textContent = s.colorMode==="theme"
+    ? "Takes the text colour of the Squarespace section the accordion sits in."
+    : "The panels carry their own colours, so the frame follows the first panel’s text colour and each divider follows its own panel’s.";
 
   /* --- colour --- */
   $("rowRamp").hidden = s.colorMode!=="ramp";
-  $("rampHint").hidden = s.colorMode!=="ramp";
+  $("rowRampText").hidden = s.colorMode!=="ramp";
+  $("rowRampTextColor").hidden = s.colorMode!=="ramp" || s.rampTextMode!=="custom";
   $("customArea").hidden = s.colorMode!=="custom";
   $("colorModeHint").innerHTML = {
     theme:"Panels stay transparent and take the colour of whatever Squarespace section you drop the accordion into.",
@@ -2190,6 +2289,7 @@ function buildPreview(s){
   items=items.slice(0,s.panelLimit);
 
   const uid="pv";
+  root.classList.add("va-booting");
   root.innerHTML='<div class="vertical-accordions" data-mode="'+mode+'">'+
     items.map((it,i)=>panelMarkup(it,i,s,mode,uid)).join("")+"</div>";
 
@@ -2213,6 +2313,12 @@ function buildPreview(s){
   s.maxPanelHeight=toPane(s.maxPanelHeight);
 
   applyStyleVars(root,component,s,panels.length);
+  // "Use the theme's text colour" is the surrounding section's colour, which
+  // reads as a stray page-coloured box once the panels carry their own.
+  if(s.borderColor==="currentColor" && s.colorMode!=="theme"){
+    const firstText=component.style.getPropertyValue("--va-panel-1-color").trim();
+    if(firstText) component.style.setProperty("--va-border-color",firstText);
+  }
   root.classList.add("loaded");
 
   let activeIndex=-1, timer=null, hovering=false;
@@ -2340,6 +2446,7 @@ function buildPreview(s){
 
   measure();
   open(Math.min(Math.max(1,s.initialOpen),panels.length)-1);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>root.classList.remove("va-booting")));
   requestAnimationFrame(measure);
   setTimeout(measure,120);
 

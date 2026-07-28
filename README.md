@@ -50,7 +50,7 @@ Settings resolve lowest-precedence first:
 | Content | `source` `panelLimit` `contentMode` `reverseOrder` `titleSource` `customTitles` `titleTag` `weglotPaths` |
 | Panel content | `showNumber` `showNumberInRail` `showTitleInPanel` `showExcerpt` `excerptLength` `textSource` `showButton` `buttonLabel` `buttonStyle` `buttonTarget` |
 | Item details | `showCategories` `showTags` `showPrice` `showDate` `showAuthor` `metaStyle` `metaPosition` |
-| Image | `showImage` `cardLayout` `splitSide` `splitRatio` `imageFit` `mediaHeight` `mediaRadius` `mediaBorderWidth` `mediaBorderColor` `overlayTint` |
+| Image | `showImage` `cardLayout` `splitSide` `splitRatio` `imageFit` `mediaHeight` `mediaRadius` `mediaBorderWidth` `mediaBorderColor` `overlayTint` `overlayText` `overlayTextColor` |
 | Layout | `layout` `heightMode` `fixedHeight` `minPanelHeight` `maxPanelHeight` `railWidth` `panelGap` `borderRadius` `borderWidth` `borderColor` `contentPadding` `fullWidth` `railSide` `verticalTextDirection` `titleAlign` `contentAlign` |
 | Behaviour | `initialOpen` `allowAllClosed` `trigger` `autoplay` `autoplayDelay` `pauseOnHover` `loop` `transitionDuration` `easing` `scrollToOnOpen` `scrollOffset` `updateUrl` `keyboardNav` `respectReducedMotion` `mobileBreakpoint` `mobileLayout` |
 | Styling | `colorMode` `rampFrom` `rampTo` `panelColors` `titleColor` `titleFontFamily` `titleSize` `titleTextTransform` `titleLetterSpacing` `titlePadding` `numberSize` `excerptSize` `metaSize` `priceSize` `iconStyle` `icon` `iconPlacement` `iconShape` `iconSize` |
@@ -64,11 +64,21 @@ Settings resolve lowest-precedence first:
 | --- | --- |
 | `theme` | Panels stay transparent and take the colour of the Squarespace section they sit in. The default. |
 | `section` | Each panel picks up the background of the first section on that item's own page, so the accordion reads as a set of those pages. Text colour is derived to match. |
-| `ramp` | Steps evenly from `rampFrom` to `rampTo` across the panels, choosing a contrasting text colour at each step. |
+| `ramp` | Steps evenly from `rampFrom` to `rampTo` across the panels. `rampTextMode` is `auto` for a contrasting text colour at each step, or `custom` to pin one colour with `rampTextColor`. |
 | `custom` | One entry of `panelColors` per panel — `{ bg, hover, text }`. `hover` and `text` are worked out from `bg` when left off. |
 
-Panels sit flush by default. Set `panelGap` above zero to break them into separate
-cards; `borderRadius` and `borderWidth` then apply per panel rather than to the block.
+Panels sit flush by default with a 1px frame. Set `panelGap` above zero to break them
+into separate cards; `borderRadius` and `borderWidth` then apply per panel rather than
+to the block.
+
+`borderColor: "currentColor"` means "follow the text colour". While the panels are
+transparent that is the surrounding section's text colour. Once they carry their own
+colours the frame follows the first panel's text colour and each divider follows its
+own panel's — otherwise a page-coloured box gets drawn around coloured panels.
+
+When the image fills the panel the words sit on top of it and cannot take their colour
+from the panel background, which is hidden. `overlayText` sets that colour
+(`light` / `dark` / `custom` / `auto`), and `overlayTint` darkens the photo behind it.
 
 ## Accessibility and markup
 

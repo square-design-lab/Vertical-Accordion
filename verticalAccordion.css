@@ -61,9 +61,16 @@
   border-radius: var(--va-border-radius);
 }
 
+/* The divider sits on a panel, so it takes that panel's own text colour rather
+   than the page's — otherwise a coloured panel gets a page-coloured hairline. */
 [data-sdl-plugin="vertical-accordions"]:not(.va-gapped)
   .accordion-panel:not(:first-child) {
-  border-left: var(--va-border-width) solid var(--va-border-color);
+  border-left: var(--va-border-width) solid var(--va-divider-color, var(--va-border-color));
+}
+
+[data-sdl-plugin="vertical-accordions"]:not([data-color-mode="theme"])
+  .accordion-panel {
+  --va-divider-color: currentColor;
 }
 
 /* --------------------------------------------------------------------------
@@ -322,6 +329,9 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
+  /* A contained image in a full-width frame would float to the centre while the
+     words below it start at the left edge. Anchor it to the same edge. */
+  object-position: left center;
 }
 
 /* cover — the image becomes the panel background and the text sits on top */
@@ -400,6 +410,27 @@
   background: #000;
   opacity: var(--va-overlay-tint, 0);
   pointer-events: none;
+}
+
+/* Words on top of a photo can't take their colour from the panel background —
+   it's behind the image. They use the overlay colour instead. */
+[data-sdl-plugin="vertical-accordions"] .va-card[data-over-image="true"] .va-card__body {
+  color: var(--va-overlay-text, #ffffff);
+}
+
+[data-sdl-plugin="vertical-accordions"]
+  .va-card[data-over-image="true"]
+  .va-card__body
+  .va-card__title {
+  color: inherit;
+}
+
+[data-sdl-plugin="vertical-accordions"]
+  .va-card[data-over-image="true"]
+  .sqs-button-element--primary {
+  background-color: var(--va-overlay-text, #ffffff);
+  border-color: var(--va-overlay-text, #ffffff);
+  color: var(--va-panel-background, #111111);
 }
 
 [data-sdl-plugin="vertical-accordions"] .va-card__body {
@@ -735,6 +766,14 @@
 
 [data-sdl-plugin="vertical-accordions"].va-mobile .va-sections {
   max-height: none;
+}
+
+/* First paint: panels are inserted before their colours and widths are known, so
+   without this every panel would visibly fade up from transparent and the open
+   one would slide open on load. */
+[data-sdl-plugin="vertical-accordions"].va-booting *,
+[data-sdl-plugin="vertical-accordions"].va-booting {
+  transition: none !important;
 }
 
 /* --------------------------------------------------------------------------
