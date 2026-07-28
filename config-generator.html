@@ -39,6 +39,8 @@
   .hint{font-size:11.5px;color:var(--muted)}
   .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .note{background:var(--accent-soft);border-radius:7px;padding:10px 12px;font-size:12.5px;color:#3a3f47}
+  .subhead{font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);
+    padding-top:6px;border-top:1px solid var(--line);margin-top:3px}
 
   .tog{display:flex;align-items:center;justify-content:space-between;gap:12px}
   .tog label{font-size:13px;font-weight:500}
@@ -54,8 +56,10 @@
   .preset{border:1px solid var(--line);border-radius:var(--radius);background:#fbfcfd;padding:8px 6px;cursor:pointer;display:grid;gap:6px;justify-items:center}
   .preset:hover{border-color:#cfd6de}
   .preset.on{border-color:var(--accent);background:#fff;box-shadow:0 0 0 1px var(--accent)}
-  .preset-art{width:100%;height:38px;border-radius:4px;display:flex;gap:2px;overflow:hidden}
+  .presets{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+  .preset-art{width:100%;height:42px;border-radius:4px;display:flex;gap:2px;overflow:hidden}
   .preset-art i{display:block;background:#c9ced6}
+  .preset-sub{font-size:10px;color:var(--muted);font-weight:500;line-height:1.3;text-align:center}
   .preset span{font-size:11px;font-weight:600}
 
   /* per-panel colour rows */
@@ -93,9 +97,19 @@
           border:1px solid var(--line);border-radius:99px;font:12.5px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted)}
   .urlbar b{color:var(--ink);font-weight:600}
   .pv-note{font-size:12px;color:var(--muted);margin:0 0 12px}
-  .pv-wrap{background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden}
-  .pv-scroll{position:relative;overflow:auto;padding:20px;max-height:calc(100vh - 210px)}
+  .pv-wrap{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;
+    box-shadow:0 1px 2px rgba(16,20,28,.05),0 8px 24px -18px rgba(16,20,28,.35)}
+  .pv-scroll{position:relative;overflow:auto;padding:28px 0;max-height:calc(100vh - 200px)}
+  .pv-scroll::-webkit-scrollbar{width:10px;height:10px}
+  .pv-scroll::-webkit-scrollbar-thumb{background:#d6dae0;border-radius:99px;border:3px solid #fff}
   .pv-wrap.mobile{max-width:430px;margin:0 auto}
+  .pv-empty{display:grid;justify-items:center;gap:14px;padding:70px 24px;text-align:center;color:var(--muted)}
+  .pv-empty p{margin:0;max-width:44ch;line-height:1.6}
+  .pv-empty b{color:var(--ink)}
+  .pv-empty-picks{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+  .pv-empty-picks button{border:1px solid var(--line);background:#fff;border-radius:99px;padding:7px 16px;
+    font-size:12.5px;font-weight:600;color:var(--ink);cursor:pointer}
+  .pv-empty-picks button:hover{border-color:var(--accent)}
 
   pre{margin:0 0 16px;padding:18px;background:#12141a;color:#e6e9ef;border-radius:10px;overflow:auto;
       font:12.5px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;word-break:break-word}
@@ -114,12 +128,12 @@
   /* Stands in for the site's content container so "break out to full width"
      has something to break out of. The plugin's real rule uses 100vw, which
      would escape this pane — here it breaks out to the pane instead. */
-  #siteWrapper .pv-container{max-width:78%;margin:0 auto}
+  #siteWrapper .pv-container{max-width:min(88%,1100px);margin:0 auto}
   #siteWrapper .pv-container > .va-full-width{
-    width:128.205%;max-width:none;margin-left:-14.103%;margin-right:-14.103%}
-  .pv-wrap.mobile #siteWrapper .pv-container{max-width:92%}
+    width:113.64%;max-width:none;margin-left:-6.82%;margin-right:-6.82%}
+  .pv-wrap.mobile #siteWrapper .pv-container{max-width:88%}
   .pv-wrap.mobile #siteWrapper .pv-container > .va-full-width{
-    width:108.7%;margin-left:-4.35%;margin-right:-4.35%}
+    width:113.64%;margin-left:-6.82%;margin-right:-6.82%}
   /* Preview-only stand-in for the site's themed button styles. */
   #siteWrapper .sqs-block-button-element{
     display:inline-block;padding:11px 22px;border-radius:99px;font-size:13px;font-weight:600;
@@ -133,10 +147,20 @@
   #siteWrapper .sqs-button-element--secondary{background-color:transparent;color:inherit}
   #siteWrapper .va-card__title{font-size:1.9em;line-height:1.15;font-weight:600;letter-spacing:-.02em}
   #siteWrapper .va-card__excerpt{line-height:1.55}
-  #siteWrapper .pv-section{display:grid;place-items:center;padding:40px;gap:14px;text-align:center;min-height:100%}
-  #siteWrapper .pv-section h4{margin:0;font-size:1.5em}
-  #siteWrapper .pv-section p{margin:0;max-width:44ch;opacity:.8}
-  #siteWrapper .pv-section .pv-fake-block{width:100%;max-width:340px;aspect-ratio:16/9;border-radius:8px;background:currentColor;opacity:.14}
+  /* Stand-in for a fetched Squarespace page: a stack of sections, which is what
+     a portfolio item actually drops into the panel. */
+  #siteWrapper .pv-sections{display:grid;min-height:100%}
+  #siteWrapper .pv-section{padding:var(--va-content-padding,40px);display:grid;gap:16px;align-content:center}
+  #siteWrapper .pv-section--hero{gap:12px}
+  #siteWrapper .pv-section h4{margin:0;font-size:2em;line-height:1.15;letter-spacing:-.02em;font-weight:600}
+  #siteWrapper .pv-section p{margin:0;max-width:52ch;opacity:.82;line-height:1.6}
+  #siteWrapper .pv-section .pv-img{width:100%;border-radius:6px;overflow:hidden;aspect-ratio:16/9}
+  #siteWrapper .pv-section .pv-img img{display:block;width:100%;height:100%;object-fit:cover}
+  #siteWrapper .pv-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  #siteWrapper .pv-cols h5{margin:0 0 6px;font-size:.78em;text-transform:uppercase;letter-spacing:.09em;opacity:.65}
+  #siteWrapper .pv-cols p{font-size:.92em}
+  [data-sdl-plugin="vertical-accordions"].va-mobile #siteWrapper .pv-cols,
+  #siteWrapper .va-mobile .pv-cols{grid-template-columns:1fr}
 </style>
 
 <!-- ==========================================================================
@@ -402,6 +426,11 @@
    Content
    -------------------------------------------------------------------------- */
 
+/* The open panel's width is written inline by the script rather than pulled
+   from --va-active-width here: a `transition: width` whose target comes from a
+   custom property can latch on its start value when the property and the
+   .panel-active class land in the same style flush, leaving the panel stuck
+   shut. An explicit px value always gives the transition a real from and to. */
 [data-sdl-plugin="vertical-accordions"] .accordion-content-wrapper {
   flex: 0 0 auto;
   width: 0;
@@ -409,7 +438,10 @@
   transition: width var(--va-transition-duration) var(--va-easing);
 }
 
-[data-sdl-plugin="vertical-accordions"] .panel-active .accordion-content-wrapper {
+/* No-JS / pre-measure fallback so the first panel isn't invisible. */
+[data-sdl-plugin="vertical-accordions"]:not(.loaded)
+  .panel-active
+  .accordion-content-wrapper {
   width: var(--va-active-width, 0px);
 }
 
@@ -449,7 +481,8 @@
 [data-sdl-plugin="vertical-accordions"] .va-card__media {
   position: relative;
   overflow: hidden;
-  border-radius: inherit;
+  border-radius: var(--va-media-radius, 0px);
+  border: var(--va-media-border-width, 0px) solid var(--va-media-border-color, currentColor);
 }
 
 [data-sdl-plugin="vertical-accordions"] .va-card__media img {
@@ -480,6 +513,55 @@
 [data-sdl-plugin="vertical-accordions"] .va-card__media[data-fit="inline"] {
   flex: 0 0 auto;
   height: var(--va-media-height, 200px);
+}
+
+/* --------------------------------------------------------------------------
+   Split card — image in one column, words in the other. The default for blog,
+   events and product collections on desktop.
+   -------------------------------------------------------------------------- */
+
+[data-sdl-plugin="vertical-accordions"][data-card-layout="split"] .va-card {
+  flex-direction: row;
+  align-items: stretch;
+  gap: var(--va-content-padding, 40px);
+}
+
+[data-sdl-plugin="vertical-accordions"][data-card-layout="split"][data-split-side="right"] .va-card {
+  flex-direction: row-reverse;
+}
+
+[data-sdl-plugin="vertical-accordions"][data-card-layout="split"] .va-card__media[data-fit="split"] {
+  position: relative;
+  inset: auto;
+  flex: 0 0 var(--va-split-ratio, 50%);
+  min-width: 0;
+  align-self: stretch;
+}
+
+[data-sdl-plugin="vertical-accordions"][data-card-layout="split"]
+  .va-card__media[data-fit="split"] img {
+  object-fit: cover;
+}
+
+[data-sdl-plugin="vertical-accordions"][data-card-layout="split"] .va-card__body {
+  flex: 1 1 auto;
+  min-width: 0;
+  align-self: center;
+  max-width: 46ch;
+}
+
+[data-sdl-plugin="vertical-accordions"][data-card-layout="split"][data-content-align="top"] .va-card__body {
+  align-self: flex-start;
+}
+[data-sdl-plugin="vertical-accordions"][data-card-layout="split"][data-content-align="bottom"] .va-card__body {
+  align-self: flex-end;
+}
+
+/* Nothing to split when there's no image. */
+[data-sdl-plugin="vertical-accordions"][data-card-layout="split"]
+  .va-card:not(:has(.va-card__media))
+  .va-card__body {
+  max-width: 62ch;
 }
 
 [data-sdl-plugin="vertical-accordions"] .va-card__tint {
@@ -518,6 +600,74 @@
   margin: 0;
   font-size: var(--va-excerpt-size, inherit);
   opacity: 0.88;
+}
+
+/* --- item metadata: categories, tags, date, author --- */
+
+[data-sdl-plugin="vertical-accordions"] .va-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--va-meta-size, 0.78em);
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-card__meta > li {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-card__meta[data-style="pill"] > li > .va-meta__item {
+  padding: 0.5em 0.85em;
+  border: 1px solid currentColor;
+  border-radius: 99px;
+  opacity: 0.75;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-card__meta[data-style="plain"] {
+  gap: 0;
+  opacity: 0.72;
+}
+
+/* A thin separator between plain meta entries, but not before the first. */
+[data-sdl-plugin="vertical-accordions"]
+  .va-card__meta[data-style="plain"]
+  > li:not(:first-child)
+  > .va-meta__item::before {
+  content: "";
+  display: inline-block;
+  width: 1px;
+  height: 0.85em;
+  margin: 0 0.75em -0.08em;
+  background: currentColor;
+  opacity: 0.45;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-card__price {
+  margin: 0;
+  font-size: var(--va-price-size, 1.15em);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-card__price-from {
+  font-weight: 400;
+  opacity: 0.7;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-card__price--sale s {
+  opacity: 0.55;
+  font-weight: 400;
+  margin-right: 0.35em;
 }
 
 [data-sdl-plugin="vertical-accordions"] .va-card__link {
@@ -720,6 +870,22 @@
   padding: max(20px, calc(var(--va-content-padding) * 0.6));
 }
 
+/* A two-column split has nowhere to go on a phone — stack it. */
+[data-sdl-plugin="vertical-accordions"].va-mobile[data-card-layout="split"] .va-card,
+[data-sdl-plugin="vertical-accordions"].va-mobile[data-card-layout="split"][data-split-side="right"] .va-card {
+  flex-direction: column;
+  gap: 1.2em;
+}
+[data-sdl-plugin="vertical-accordions"].va-mobile[data-card-layout="split"] .va-card__body {
+  align-self: stretch;
+  max-width: none;
+}
+[data-sdl-plugin="vertical-accordions"].va-mobile .va-card__media[data-fit="split"] {
+  flex: 0 0 auto;
+  height: 220px;
+  align-self: stretch;
+}
+
 [data-sdl-plugin="vertical-accordions"].va-mobile .va-card__media[data-fit="cover"] {
   position: relative;
   inset: auto;
@@ -796,45 +962,59 @@
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></button>
         <div class="grp-body">
           <div class="row">
+            <label>What are you pulling from?</label>
+            <select id="collectionType" onchange="onTypeChange()">
+              <option value="">Choose a collection type…</option>
+              <option value="portfolio">Portfolio — each item’s full page</option>
+              <option value="blog">Blog</option>
+              <option value="events">Events</option>
+              <option value="products">Products</option>
+              <option value="other">Another collection</option>
+            </select>
+            <div class="hint" id="typeHint">Portfolio items render their whole page inside the panel. Every other collection builds a card from the item’s title, excerpt, image and a button.</div>
+          </div>
+          <div class="row" id="rowSource" hidden>
             <label>Collection URL</label>
-            <input type="text" id="source" value="/portfolio" oninput="sync()">
-            <div class="hint">The page slug of a blog, portfolio, events or products collection. Add <code class="inl">?featured</code> to use starred items only.</div>
+            <input type="text" id="source" value="" oninput="sync()">
+            <div class="hint" id="sourceHint"></div>
           </div>
+          <div id="afterType" hidden style="display:grid;gap:13px">
+            <div class="row">
+              <label>How many panels</label>
+              <input type="number" id="panelLimit" value="5" min="1" max="12" oninput="sync()">
+              <div class="hint">12 is the maximum — rails get unreadable past that.</div>
+            </div>
+            <div class="row">
+              <label>Panel content</label>
+              <select id="contentMode" onchange="sync()">
+                <option value="auto">Match the collection type</option>
+                <option value="fields">Item fields — title, excerpt, image, button</option>
+                <option value="sections">Full page sections</option>
+              </select>
+              <div class="hint" id="contentModeHint"></div>
+            </div>
           <div class="row">
-            <label>How many panels</label>
-            <input type="number" id="panelLimit" value="5" min="1" max="12" oninput="sync()">
-            <div class="hint">12 is the maximum — rails get unreadable past that.</div>
+              <label>Rail title comes from</label>
+              <select id="titleSource" onchange="sync()">
+                <option value="title">Item title</option>
+                <option value="categories">Item categories</option>
+                <option value="custom">Custom list</option>
+              </select>
+            </div>
+            <div class="row" id="rowCustomTitles" hidden>
+              <label>Custom titles</label>
+              <input type="text" id="customTitles" placeholder="Discover, Design, Build, Launch" oninput="sync()">
+              <div class="hint">Comma-separated, in panel order. Blanks fall back to the item title.</div>
+            </div>
+            <div class="row">
+              <label>Title tag</label>
+              <select id="titleTag" onchange="sync()">
+                <option>h2</option><option selected>h3</option><option>h4</option><option>h5</option><option>div</option>
+              </select>
+            </div>
+            <div class="tog"><label>Reverse the order</label>
+              <span class="sw"><input type="checkbox" id="reverseOrder" onchange="sync()"><span></span></span></div>
           </div>
-          <div class="row">
-            <label>Panel content</label>
-            <select id="contentMode" onchange="sync()">
-              <option value="auto">Automatic (recommended)</option>
-              <option value="fields">Item fields — title, excerpt, image, button</option>
-              <option value="sections">Full page sections</option>
-            </select>
-            <div class="hint">Automatic renders <b>portfolio</b> collections as their full page sections, and everything else as a card built from the item fields.</div>
-          </div>
-          <div class="row">
-            <label>Rail title comes from</label>
-            <select id="titleSource" onchange="sync()">
-              <option value="title">Item title</option>
-              <option value="categories">Item categories</option>
-              <option value="custom">Custom list</option>
-            </select>
-          </div>
-          <div class="row" id="rowCustomTitles" hidden>
-            <label>Custom titles</label>
-            <input type="text" id="customTitles" placeholder="Discover, Design, Build, Launch" oninput="sync()">
-            <div class="hint">Comma-separated, in panel order. Blanks fall back to the item title.</div>
-          </div>
-          <div class="row">
-            <label>Title tag</label>
-            <select id="titleTag" onchange="sync()">
-              <option>h2</option><option selected>h3</option><option>h4</option><option>h5</option><option>div</option>
-            </select>
-          </div>
-          <div class="tog"><label>Reverse the order</label>
-            <span class="sw"><input type="checkbox" id="reverseOrder" onchange="sync()"><span></span></span></div>
         </div>
       </section>
 
@@ -843,7 +1023,7 @@
         <button class="grp-head" onclick="tog(this)">Panel Content
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></button>
         <div class="grp-body">
-          <div class="note" id="fieldsNote">These control the card built from item fields. They're ignored for panels rendering full page sections.</div>
+          <div class="note" id="fieldsNote">These build the card shown in each panel. They're ignored for panels rendering full page sections.</div>
           <div class="row">
             <label>Numbering</label>
             <select id="showNumber" onchange="sync()">
@@ -857,15 +1037,67 @@
             <span class="sw"><input type="checkbox" id="showNumberInRail" checked onchange="sync()"><span></span></span></div>
           <div class="tog"><label>Title inside the open panel</label>
             <span class="sw"><input type="checkbox" id="showTitleInPanel" checked onchange="sync()"><span></span></span></div>
-          <div class="tog"><label>Excerpt</label>
+          <div class="row" id="rowTextSource">
+            <label>Body text</label>
+            <select id="textSource" onchange="sync()">
+              <option value="excerpt">Excerpt</option>
+              <option value="body">Full description</option>
+            </select>
+            <div class="hint" id="textSourceHint"></div>
+          </div>
+          <div class="tog"><label id="labelShowExcerpt">Show the body text</label>
             <span class="sw"><input type="checkbox" id="showExcerpt" checked onchange="sync()"><span></span></span></div>
           <div class="row" id="rowExcerptLength">
-            <label>Trim the excerpt to (characters)</label>
+            <label>Trim it to (characters)</label>
             <input type="number" id="excerptLength" value="240" min="0" oninput="sync()">
             <div class="hint">0 keeps the whole thing.</div>
           </div>
-          <div class="tog"><label>Image</label>
+
+          <div class="subhead" id="detailsHead">Details</div>
+          <p class="hint" id="detailsHint"></p>
+          <div class="tog" id="rowShowPrice"><label>Price</label>
+            <span class="sw"><input type="checkbox" id="showPrice" onchange="sync()"><span></span></span></div>
+          <div class="tog" id="rowShowCategories"><label>Categories</label>
+            <span class="sw"><input type="checkbox" id="showCategories" onchange="sync()"><span></span></span></div>
+          <div class="tog" id="rowShowTags"><label>Tags</label>
+            <span class="sw"><input type="checkbox" id="showTags" onchange="sync()"><span></span></span></div>
+          <div class="tog" id="rowShowDate"><label id="labelShowDate">Date</label>
+            <span class="sw"><input type="checkbox" id="showDate" onchange="sync()"><span></span></span></div>
+          <div class="tog" id="rowShowAuthor"><label>Author</label>
+            <span class="sw"><input type="checkbox" id="showAuthor" onchange="sync()"><span></span></span></div>
+          <div class="two" id="rowMetaStyle">
+            <div class="row"><label>Detail style</label>
+              <select id="metaStyle" onchange="sync()">
+                <option value="pill">Outlined pills</option>
+                <option value="plain">Plain text</option>
+              </select></div>
+            <div class="row"><label>Sits</label>
+              <select id="metaPosition" onchange="sync()">
+                <option value="above">Above the title</option>
+                <option value="below">Under the text</option>
+              </select></div>
+          </div>
+
+          <div class="subhead">Image</div>
+          <div class="tog"><label>Show an image</label>
             <span class="sw"><input type="checkbox" id="showImage" checked onchange="sync()"><span></span></span></div>
+          <div class="row" id="rowCardLayout">
+            <label>Panel layout</label>
+            <select id="cardLayout" onchange="sync()">
+              <option value="split">Two columns \u2014 image beside the text</option>
+              <option value="stacked">One column \u2014 image above the text</option>
+            </select>
+            <div class="hint">Two columns stack automatically on mobile.</div>
+          </div>
+          <div class="two" id="rowSplitOpts">
+            <div class="row"><label>Image sits on the</label>
+              <select id="splitSide" onchange="sync()">
+                <option value="left">Left</option><option value="right">Right</option>
+              </select></div>
+            <div class="row"><label>Image column (%)</label>
+              <input type="number" id="splitRatio" value="50" min="20" max="80" oninput="sync()">
+              <div class="hint">Share of the padded content area.</div></div>
+          </div>
           <div class="row" id="rowImageFit">
             <label>Image behaviour</label>
             <select id="imageFit" onchange="sync()">
@@ -879,12 +1111,26 @@
             <input type="number" id="mediaHeight" value="240" min="40" oninput="sync()">
             <div class="hint">Used when the image fits above the text or sits in a band. In a fixed-height panel a fitted image grows past this to fill the space.</div>
           </div>
+          <div class="two" id="rowMediaFrame">
+            <div class="row"><label>Image corner radius (px)</label>
+              <input type="number" id="mediaRadius" value="0" min="0" oninput="sync()"></div>
+            <div class="row"><label>Image border (px)</label>
+              <input type="number" id="mediaBorderWidth" value="0" min="0" oninput="sync()"></div>
+          </div>
+          <div class="row" id="rowMediaBorderColor" hidden>
+            <label>Image border colour</label>
+            <input type="color" id="mediaBorderColor" value="#111111" oninput="sync()">
+            <div class="hint">Leave the toggle below on to follow the panel\u2019s text colour instead.</div>
+          </div>
+          <div class="tog" id="rowMediaBorderInherit"><label>Border follows the panel colour</label>
+            <span class="sw"><input type="checkbox" id="mediaBorderInherit" checked onchange="sync()"><span></span></span></div>
           <div class="row" id="rowTint">
             <label>Darken behind the text (%)</label>
             <input type="number" id="overlayTint" value="0" min="0" max="90" oninput="sync()">
             <div class="hint">Only applies when the image fills the panel.</div>
           </div>
-          <div class="tog"><label>Button</label>
+          <div class="subhead">Button</div>
+          <div class="tog"><label>Show a button</label>
             <span class="sw"><input type="checkbox" id="showButton" checked onchange="sync()"><span></span></span></div>
           <div id="btnArea" style="display:grid;gap:13px">
             <div class="row"><label>Button label</label>
@@ -909,21 +1155,8 @@
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></button>
         <div class="grp-body">
           <div class="row">
-            <label>Start from a preset</label>
-            <div class="presets">
-              <button class="preset" data-preset="rails" onclick="applyPreset('rails')">
-                <span class="preset-art" style="gap:2px">
-                  <i style="flex:5;border-radius:3px;background:#1d3b30"></i><i style="flex:1;border-radius:3px;background:#2f6350"></i><i style="flex:1;border-radius:3px;background:#8d9d92"></i><i style="flex:1;border-radius:3px;background:#f26522"></i>
-                </span><span>Rails</span></button>
-              <button class="preset" data-preset="fullbleed" onclick="applyPreset('fullbleed')">
-                <span class="preset-art">
-                  <i style="flex:5;background:#111"></i><i style="flex:1;background:#e2e2e2"></i><i style="flex:1;background:#cacaca"></i><i style="flex:1;background:#b2b2b2"></i>
-                </span><span>Full bleed</span></button>
-              <button class="preset" data-preset="minimal" onclick="applyPreset('minimal')">
-                <span class="preset-art" style="border:1px solid #d5d9de">
-                  <i style="flex:5;background:#fff"></i><i style="flex:1;background:#fff;border-left:1px solid #d5d9de"></i><i style="flex:1;background:#fff;border-left:1px solid #d5d9de"></i><i style="flex:1;background:#fff;border-left:1px solid #d5d9de"></i>
-                </span><span>Minimal</span></button>
-            </div>
+            <label>Start from a design</label>
+            <div class="presets" id="presetList"></div>
             <div class="hint">A preset just fills in the fields below — tweak anything afterwards.</div>
           </div>
 
@@ -958,8 +1191,12 @@
             <div class="hint">Long titles are trimmed with an ellipsis if they don't fit.</div>
           </div>
 
+          <div class="tog"><label>Separate the panels with a gap</label>
+            <span class="sw"><input type="checkbox" id="showGap" onchange="sync()"><span></span></span></div>
+          <div class="hint">Off, the panels sit flush as one block. On, each becomes its own card.</div>
           <div class="two">
-            <div class="row"><label>Gap between panels (px)</label><input type="number" id="panelGap" value="0" min="0" oninput="sync()"></div>
+            <div class="row" id="rowPanelGap" hidden><label>Gap (px)</label>
+              <input type="number" id="panelGap" value="8" min="1" oninput="sync()"></div>
             <div class="row"><label>Corner radius (px)</label><input type="number" id="borderRadius" value="0" min="0" oninput="sync()"></div>
           </div>
           <div class="two">
@@ -1011,12 +1248,14 @@
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></button>
         <div class="grp-body">
           <div class="row">
-            <label>Colour mode</label>
+            <label>Where do panel colours come from?</label>
             <select id="colorMode" onchange="sync()">
-              <option value="theme">Inherit the section theme</option>
-              <option value="ramp">Blend between two colours</option>
-              <option value="custom">Pick each panel</option>
+              <option value="theme">The section this sits in</option>
+              <option value="section">Each item\u2019s own page</option>
+              <option value="ramp">A blend between two colours</option>
+              <option value="custom">A colour I pick per panel</option>
             </select>
+            <div class="hint" id="colorModeHint"></div>
           </div>
           <div class="two" id="rowRamp" hidden>
             <div class="row"><label>First panel</label><input type="color" id="rampFrom" value="#f2f2f2" oninput="sync()"></div>
@@ -1202,6 +1441,16 @@
         <div class="pv-scroll">
           <div id="siteWrapper">
             <div class="pv-container">
+              <div class="pv-empty" id="pvEmpty">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3" y="4" width="5" height="16" rx="1"/><line x1="12" y1="4" x2="12" y2="20"/><line x1="17" y1="4" x2="17" y2="20"/><line x1="21.5" y1="4" x2="21.5" y2="20"/></svg>
+                <p><b>Pick a collection type to start.</b><br>Most people point this at a portfolio and let each item’s page fill the panel.</p>
+                <div class="pv-empty-picks">
+                  <button onclick="pickType('portfolio')">Portfolio</button>
+                  <button onclick="pickType('blog')">Blog</button>
+                  <button onclick="pickType('events')">Events</button>
+                  <button onclick="pickType('products')">Products</button>
+                </div>
+              </div>
               <div data-sdl-plugin="vertical-accordions" id="pvMount"></div>
             </div>
           </div>
@@ -1265,8 +1514,13 @@ const DEFAULTS = {
   source: undefined, panelLimit: 5, contentMode: "auto", reverseOrder: false,
   titleSource: "title", customTitles: "", titleTag: "h3", showNumber: "none",
   showNumberInRail: true, showTitleInPanel: true, showExcerpt: true, excerptLength: 240,
-  showImage: true, imageFit: "cover", mediaHeight: 240, showButton: true, buttonLabel: "Read more",
-  buttonTarget: "_self", buttonStyle: "primary", weglotPaths: undefined,
+  showImage: true, cardLayout: "stacked", splitSide: "left", splitRatio: 50,
+  imageFit: "cover", mediaHeight: 240, mediaRadius: 0, mediaBorderWidth: 0,
+  mediaBorderColor: "currentColor", showButton: true, buttonLabel: "Read more",
+  buttonTarget: "_self", buttonStyle: "primary",
+  textSource: "excerpt", showCategories: false, showTags: false, showPrice: false,
+  showDate: false, showAuthor: false, metaStyle: "pill", metaPosition: "above",
+  weglotPaths: undefined,
   layout: "rails", heightMode: "content", fixedHeight: "620px", minPanelHeight: "30vh",
   maxPanelHeight: "80vh", railWidth: "equal", panelGap: 0, borderRadius: 0, borderWidth: 1,
   borderColor: "currentColor", fullWidth: false, railSide: "left",
@@ -1278,7 +1532,7 @@ const DEFAULTS = {
   mobileLayout: "stacked", colorMode: "theme", rampFrom: "#f2f2f2", rampTo: "#111111",
   panelColors: [], titleColor: "", titleFontFamily: "", titleSize: "",
   titleTextTransform: "", titleLetterSpacing: "", titlePadding: 16, numberSize: "",
-  excerptSize: "", iconStyle: "plus", icon: "", iconPlacement: "bottom",
+  excerptSize: "", metaSize: "", priceSize: "", iconStyle: "plus", icon: "", iconPlacement: "bottom",
   iconShape: "bare", iconSize: 24, overlayTint: 0,
   reloadSiteBundle: true, initWebsiteComponents: true, duplicateRootTheme: true
 };
@@ -1320,31 +1574,65 @@ function buttonClassFor(style){
   const v=style==="secondary"?"secondary":"primary";
   return "va-card__btn sqs-block-button-element sqs-block-button-element--medium sqs-button-element--"+v;
 }
+function formatDate(ms){ if(!ms) return "";
+  try{ return new Intl.DateTimeFormat(navigator.language||"en",{year:"numeric",month:"long",day:"numeric"}).format(new Date(ms)); }catch(e){ return ""; } }
+function formatMoney(m){ if(!m) return "";
+  const a=parseFloat(m.value!=null?m.value:m.decimalValue); if(isNaN(a)) return "";
+  const c=m.currency||m.currencyCode;
+  try{ return new Intl.NumberFormat(navigator.language||"en",{style:"currency",currency:c||"USD"}).format(a); }
+  catch(e){ return (c?c+" ":"")+a.toFixed(2); } }
+function metaMarkup(item,s){
+  const bits=[];
+  const chip=(t,k)=>'<span class="va-meta__item va-meta__item--'+k+'">'+escapeHtml(t)+"</span>";
+  if(s.showCategories)(item.categories||[]).forEach(c=>bits.push(chip(c,"category")));
+  if(s.showTags)(item.tags||[]).forEach(t=>bits.push(chip(t,"tag")));
+  if(s.showDate&&item.date){const d=formatDate(item.date);
+    if(d)bits.push('<time class="va-meta__item va-meta__item--date" datetime="'+new Date(item.date).toISOString()+'">'+escapeHtml(d)+"</time>");}
+  if(s.showAuthor&&item.author)bits.push(chip(item.author,"author"));
+  if(!bits.length)return "";
+  return '<ul class="va-card__meta" data-style="'+(s.metaStyle==="pill"?"pill":"plain")+'">'+
+    bits.map(b=>"<li>"+b+"</li>").join("")+"</ul>";
+}
+function priceMarkup(item,s){
+  if(!s.showPrice||!item.price||!item.price.display)return "";
+  const pr=item.price;
+  if(pr.onSale&&pr.sale) return '<p class="va-card__price va-card__price--sale"><s>'+escapeHtml(pr.display)+"</s> <span>"+escapeHtml(pr.sale)+"</span></p>";
+  return '<p class="va-card__price">'+(pr.ranged?'<span class="va-card__price-from">From </span>':"")+escapeHtml(pr.display)+"</p>";
+}
 function cardMarkup(item,index,s){
   const number=formatNumber(index,s.showNumber);
-  const excerptText=truncate(stripHtml(item.excerpt||item.body),s.excerptLength);
+  const rawText=s.textSource==="body"?(item.body||item.excerpt):(item.excerpt||item.body);
+  const excerptText=truncate(stripHtml(rawText),s.excerptLength);
+  const fit = s.cardLayout==="split" ? "split" : s.imageFit;
   const media=s.showImage&&item.image
-    ? '<div class="va-card__media" data-fit="'+escapeHtml(s.imageFit)+'"><img src="'+escapeHtml(item.image)+'" alt="'+escapeHtml(item.imageAlt)+'" loading="lazy">'+
-      (toNumber(s.overlayTint,0)>0?'<span class="va-card__tint"></span>':"")+"</div>"
+    ? '<div class="va-card__media" data-fit="'+escapeHtml(fit)+'"><img src="'+escapeHtml(item.image)+
+      '" alt="'+(s.showTitleInPanel?"":escapeHtml(item.imageAlt||item.title||""))+'" loading="lazy" decoding="async">'+
+      (toNumber(s.overlayTint,0)>0&&fit==="cover"?'<span class="va-card__tint" aria-hidden="true"></span>':"")+"</div>"
     : "";
+  const meta=metaMarkup(item,s);
   const parts=[];
-  if(number&&s.showNumber!=="none")parts.push('<span class="va-card__num">'+escapeHtml(number)+"</span>");
+  if(number&&s.showNumber!=="none")parts.push('<span class="va-card__num" aria-hidden="true">'+escapeHtml(number)+"</span>");
+  if(meta&&s.metaPosition==="above")parts.push(meta);
   if(s.showTitleInPanel){const t=escapeHtml(s.titleTag||"h3");
     parts.push("<"+t+' class="va-card__title">'+escapeHtml(titleFor(item,index,s))+"</"+t+">");}
+  parts.push(priceMarkup(item,s));
   if(s.showExcerpt&&excerptText)parts.push('<p class="va-card__excerpt">'+escapeHtml(excerptText)+"</p>");
+  if(meta&&s.metaPosition==="below")parts.push(meta);
   if(s.showButton&&item.fullUrl)parts.push('<a class="'+buttonClassFor(s.buttonStyle)+'" href="'+escapeHtml(item.fullUrl)+
     '" target="'+escapeHtml(s.buttonTarget)+'"'+(s.buttonTarget==="_blank"?' rel="noopener noreferrer"':"")+">"+
     escapeHtml(s.buttonLabel||"Read more")+"</a>");
-  return '<div class="va-card">'+media+'<div class="va-card__body">'+parts.join("")+"</div></div>";
+  return '<article class="va-card">'+media+'<div class="va-card__body">'+parts.filter(Boolean).join("")+"</div></article>";
 }
 function panelMarkup(item,index,s,mode,uid){
   const railTitle=titleFor(item,index,s);
   const number=formatNumber(index,s.showNumber);
-  const tag=escapeHtml(s.titleTag||"h3");
+  // The rail is only a heading when nothing inside the panel already is one.
+  const panelHasHeading = mode==="sections" || s.showTitleInPanel;
+  const tag = panelHasHeading ? "span" : escapeHtml(s.titleTag||"h3");
   const icon=iconMarkup(s);
   const panelId=uid+"-panel-"+index, buttonId=uid+"-title-"+index;
   const railNumber=s.showNumberInRail&&number&&s.showNumber!=="none"
-    ? '<span class="va-rail__num">'+escapeHtml(number)+"</span>" : "";
+    ? '<span class="va-rail__num" aria-hidden="true">'+escapeHtml(number)+"</span>" : "";
   const content=mode==="sections"?(item.body||cardMarkup(item,index,s)):cardMarkup(item,index,s);
   return '<div class="accordion-panel" data-index="'+index+'">'+
     '<button type="button" class="accordion-title" id="'+buttonId+'" aria-expanded="false" aria-controls="'+panelId+'" tabindex="-1">'+
@@ -1366,6 +1654,10 @@ function applyStyleVars(root,component,s,panelCount){
   set("--va-fixed-height",toLength(s.fixedHeight,"620px"));
   set("--va-content-padding",toLength(s.contentPadding,"40px"));
   set("--va-media-height",toLength(s.mediaHeight,"240px"));
+  set("--va-media-radius",toLength(s.mediaRadius,"0px"));
+  set("--va-media-border-width",toLength(s.mediaBorderWidth,"0px"));
+  set("--va-media-border-color",s.mediaBorderColor||"currentColor");
+  set("--va-split-ratio",toNumber(s.splitRatio,50)+"%");
   set("--va-accordion-title-padding",toLength(s.titlePadding,"16px"));
   set("--va-accordion-title-color",s.titleColor);
   set("--va-accordion-title-font-family",s.titleFontFamily);
@@ -1374,12 +1666,15 @@ function applyStyleVars(root,component,s,panelCount){
   set("--va-accordion-title-letter-spacing",s.titleLetterSpacing);
   set("--va-number-size",s.numberSize);
   set("--va-excerpt-size",s.excerptSize);
+  set("--va-meta-size",s.metaSize);
+  set("--va-price-size",s.priceSize);
   set("--va-icon-width",toLength(s.iconSize,"24px"));
   set("--va-overlay-tint",String(toNumber(s.overlayTint,0)/100));
   root.dataset.layout=s.layout; root.dataset.railSide=s.railSide;
   root.dataset.textDirection=s.verticalTextDirection; root.dataset.titleAlign=s.titleAlign;
   root.dataset.contentAlign=s.contentAlign; root.dataset.iconPlacement=s.iconPlacement;
   root.dataset.iconShape=s.iconShape; root.dataset.heightMode=s.heightMode;
+  root.dataset.cardLayout=s.cardLayout; root.dataset.splitSide=s.splitSide;
   root.dataset.colorMode=s.colorMode;
   root.classList.toggle("va-full-width",!!s.fullWidth);
   root.classList.toggle("va-gapped",toNumber(s.panelGap,0)>0);
@@ -1396,6 +1691,14 @@ function applyStyleVars(root,component,s,panelCount){
       set("--va-panel-hover-"+(i+1)+"-background",shade(bg,light?-0.08:0.12));
       set("--va-panel-"+(i+1)+"-color",light?"#111111":"#ffffff");
     }
+  }else if(s.colorMode==="section"){
+    (s.__items||[]).slice(0,MAX_PANELS).forEach((it,i)=>{
+      if(!it.sectionColor)return;
+      const light=isLight(it.sectionColor);
+      set("--va-panel-"+(i+1)+"-background",it.sectionColor);
+      set("--va-panel-hover-"+(i+1)+"-background",shade(it.sectionColor,light?-0.07:0.1));
+      set("--va-panel-"+(i+1)+"-color",light?"#111111":"#ffffff");
+    });
   }else if(s.colorMode==="custom"){
     (s.panelColors||[]).slice(0,MAX_PANELS).forEach((e,i)=>{
       if(!e||!e.bg)return;
@@ -1420,28 +1723,92 @@ function placeholderImage(i,label){
     '<text x="400" y="320" font-family="sans-serif" font-size="52" font-weight="600" fill="rgba(255,255,255,.85)" text-anchor="middle">'+label+'</text></svg>';
   return "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg);
 }
-const SAMPLE=[
-  {title:"The Atlas Project",categories:["Strategy"],excerpt:"A ground-up rebrand for a logistics company that had outgrown its own name. We rebuilt the identity, the site and the way they talk about themselves."},
-  {title:"The Brightline Project",categories:["Identity"],excerpt:"Six months of research turned into a system that a twelve-person team can actually run without us in the room."},
-  {title:"The Lumen Project",categories:["Digital"],excerpt:"A retail site rebuilt around one question: how quickly can somebody find the thing they came for?"},
-  {title:"The Echo Project",categories:["Campaign"],excerpt:"A launch campaign that had to work on a billboard, a phone screen and the side of a van."},
-  {title:"Demo Project",categories:["Product"],excerpt:"Turning a spreadsheet-shaped internal tool into something the whole company was happy to open on a Monday."},
-  {title:"Test Project",categories:["Editorial"],excerpt:"A quarterly publication, redesigned so the editorial team could lay an issue out in an afternoon."},
-  {title:"Northwind",categories:["Packaging"],excerpt:"Packaging for a small-batch roastery, built to survive a supermarket shelf and still feel handmade."},
-  {title:"Fieldnote",categories:["Motion"],excerpt:"A title sequence and a set of motion rules that the in-house team still uses two years later."},
-  {title:"Halcyon",categories:["Interiors"],excerpt:"Wayfinding for a building that people kept getting lost in, solved mostly with paint."},
-  {title:"Cartograph",categories:["Data"],excerpt:"Making a decade of survey data legible to people who don't read charts for a living."},
-  {title:"Sunspot",categories:["Brand"],excerpt:"A visual language warm enough for a children's charity and serious enough for its funders."},
-  {title:"Meridian",categories:["Web"],excerpt:"A publishing platform for a research institute, designed around long reading."}
-];
-function sampleItems(n){
-  return SAMPLE.slice(0,n).map((it,i)=>({
-    id:"s"+i, title:it.title, categories:it.categories,
+const SECTION_COLORS=["#12312a","#f4f1ea","#2f4858","#e8ded1","#1b1b1b","#dfe6e2","#3d2b1f","#eef2f5","#22333b","#f6e9e0","#2b2d42","#edf2f4"];
+const money=v=>({display:new Intl.NumberFormat(navigator.language||"en",{style:"currency",currency:"USD"}).format(v),ranged:false,onSale:false,sale:""});
+
+const SAMPLES={
+  portfolio:[
+    {title:"The Atlas Project",categories:["Strategy"],tags:["Rebrand"],author:"Studio",excerpt:"A ground-up rebrand for a logistics company that had outgrown its own name. We rebuilt the identity, the site and the way they talk about themselves."},
+    {title:"The Brightline Project",categories:["Identity"],tags:["Systems"],author:"Studio",excerpt:"Six months of research turned into a system that a twelve-person team can actually run without us in the room."},
+    {title:"The Lumen Project",categories:["Digital"],tags:["Retail"],author:"Studio",excerpt:"A retail site rebuilt around one question: how quickly can somebody find the thing they came for?"},
+    {title:"The Echo Project",categories:["Campaign"],tags:["Launch"],author:"Studio",excerpt:"A launch campaign that had to work on a billboard, a phone screen and the side of a van."},
+    {title:"Fieldnote",categories:["Motion"],tags:["Film"],author:"Studio",excerpt:"A title sequence and a set of motion rules that the in-house team still uses two years later."},
+    {title:"Halcyon",categories:["Interiors"],tags:["Wayfinding"],author:"Studio",excerpt:"Wayfinding for a building that people kept getting lost in, solved mostly with paint."},
+    {title:"Cartograph",categories:["Data"],tags:["Research"],author:"Studio",excerpt:"Making a decade of survey data legible to people who don\u2019t read charts for a living."},
+    {title:"Sunspot",categories:["Brand"],tags:["Charity"],author:"Studio",excerpt:"A visual language warm enough for a children\u2019s charity and serious enough for its funders."},
+    {title:"Meridian",categories:["Web"],tags:["Editorial"],author:"Studio",excerpt:"A publishing platform for a research institute, designed around long reading."},
+    {title:"Northwind",categories:["Packaging"],tags:["Print"],author:"Studio",excerpt:"Packaging for a small-batch roastery, built to survive a supermarket shelf and still feel handmade."},
+    {title:"Quarry",categories:["Signage"],tags:["Environment"],author:"Studio",excerpt:"Cast concrete signage for a sculpture park, designed to weather rather than wear out."},
+    {title:"Tidewater",categories:["Report"],tags:["Annual"],author:"Studio",excerpt:"An annual report people actually finished, mostly because we cut two thirds of it."}
+  ],
+  blog:[
+    {title:"What we learned rebuilding our own site",categories:["Process"],tags:["Studio"],author:"Ama Boateng",excerpt:"Nine weeks, four false starts and one decision that made everything after it easier. Here\u2019s the version we\u2019d hand our past selves."},
+    {title:"Type on screens is still hard",categories:["Craft"],tags:["Typography"],author:"Ren Okafor",excerpt:"Optical sizing, line length and the small mercies of a well-set paragraph \u2014 a working note from six months of testing."},
+    {title:"Against the hero image",categories:["Opinion"],tags:["Layout"],author:"Ama Boateng",excerpt:"A full-bleed photograph is not a value proposition. What to reach for when the brief says \u2018make it feel premium\u2019."},
+    {title:"Notes from a slow redesign",categories:["Process"],tags:["Clients"],author:"Jonas Vik",excerpt:"The project ran twice as long as planned and came out better for it. What we\u2019d keep, and what we\u2019d never do again."},
+    {title:"Colour systems that survive contact",categories:["Craft"],tags:["Systems"],author:"Ren Okafor",excerpt:"Every palette looks good in the deck. Here\u2019s how to build one that still works when marketing needs a fifth accent."},
+    {title:"The brief is never the brief",categories:["Opinion"],tags:["Clients"],author:"Jonas Vik",excerpt:"On the questions worth asking in the first meeting, and the one that usually changes the whole engagement."},
+    {title:"Designing for the person editing it",categories:["Process"],tags:["CMS"],author:"Ama Boateng",excerpt:"The site will be updated by somebody with ten minutes and no design training. Build for them."},
+    {title:"Motion, but quieter",categories:["Craft"],tags:["Motion"],author:"Ren Okafor",excerpt:"A short argument for animation you notice only when it\u2019s missing, with the timings we keep coming back to."},
+    {title:"What a good handoff looks like",categories:["Process"],tags:["Build"],author:"Jonas Vik",excerpt:"Twelve things that make the difference between a build that ships clean and one that bleeds for a month."},
+    {title:"Grids we actually use",categories:["Craft"],tags:["Layout"],author:"Ama Boateng",excerpt:"Four layouts that have carried most of our work, and when each one starts to fight you."},
+    {title:"On saying no to the carousel",categories:["Opinion"],tags:["Patterns"],author:"Ren Okafor",excerpt:"Sometimes it\u2019s right. Usually it\u2019s a way of avoiding a decision about what matters most."},
+    {title:"A year of small releases",categories:["Studio"],tags:["Retro"],author:"Jonas Vik",excerpt:"We shipped something every second week for a year. Here\u2019s what that did to the work, and to us."}
+  ],
+  products:[
+    {title:"Rivet Canvas Tote",categories:["Bags"],tags:["New"],price:14000,excerpt:"Waxed canvas, riveted at every stress point, with a base that keeps its shape when the bag is empty."},
+    {title:"Field Chore Jacket",categories:["Outerwear"],tags:["Classic"],price:23500,sale:18800,excerpt:"A workwear cut in a heavy cotton twill, cut long enough to sit over a jumper without riding up."},
+    {title:"Cassette Wool Scarf",categories:["Accessories"],tags:["Winter"],price:8500,excerpt:"Lambswool woven in a mill that has been running the same looms since 1954. Warm without the bulk."},
+    {title:"Harbour Deck Shoe",categories:["Footwear"],tags:["Summer"],price:16500,excerpt:"Hand-stitched uppers on a siped rubber sole, built to be resoled rather than replaced."},
+    {title:"Ridge Merino Crew",categories:["Knitwear"],tags:["Staple"],price:11000,excerpt:"A mid-weight merino crew that holds its shape through a winter of daily wear."},
+    {title:"Anvil Leather Belt",categories:["Accessories"],tags:["Classic"],price:7500,excerpt:"Single piece of vegetable-tanned leather with a solid brass buckle you could hang a gate on."},
+    {title:"Signal Crew Socks",categories:["Accessories"],tags:["Bundle"],price:2400,excerpt:"Ribbed cotton with a reinforced heel and toe. Sold in threes because nobody buys one pair."},
+    {title:"Quarry Work Trouser",categories:["Trousers"],tags:["New"],price:13500,excerpt:"Roomy through the thigh, tapered below the knee, with pockets deep enough to be useful."},
+    {title:"Beacon Rain Shell",categories:["Outerwear"],tags:["Technical"],price:29500,excerpt:"Fully taped seams and a hood that turns with your head rather than against it."},
+    {title:"Kiln Ceramic Mug",categories:["Home"],tags:["Studio"],price:3800,excerpt:"Thrown and glazed in small batches, so no two come out of the kiln quite the same."},
+    {title:"Ledger Notebook",categories:["Home"],tags:["Paper"],price:2200,excerpt:"Sewn binding that opens flat, on a paper that takes fountain ink without feathering."},
+    {title:"Drift Linen Shirt",categories:["Shirts"],tags:["Summer"],price:9800,excerpt:"Washed linen that arrives already soft, cut boxy enough to wear open over a tee."}
+  ],
+  events:[
+    {title:"Opening Night",categories:["Exhibition"],tags:["Free"],excerpt:"Doors at seven, short talks at eight, and the studio open until late. No ticket needed."},
+    {title:"Type Workshop",categories:["Workshop"],tags:["Paid"],excerpt:"A full day on setting text properly, from optical sizing down to the last hanging punctuation mark."},
+    {title:"Studio Sessions",categories:["Talk"],tags:["Free"],excerpt:"Four designers show work that didn\u2019t make it out of the studio, and explain why."},
+    {title:"Portfolio Night",categories:["Meetup"],tags:["Free"],excerpt:"Bring ten minutes of work. Leave with notes from people who have made the same mistakes."},
+    {title:"Print Fair",categories:["Fair"],tags:["Weekend"],excerpt:"Thirty makers, two floors, and a risograph running all weekend."},
+    {title:"Winter Lecture",categories:["Talk"],tags:["Paid"],excerpt:"An hour on the history of the grid, with far more slides than strictly necessary."},
+    {title:"Binding Class",categories:["Workshop"],tags:["Paid"],excerpt:"Make three books in an afternoon and take home the tools to keep going."},
+    {title:"Open Studio",categories:["Exhibition"],tags:["Free"],excerpt:"Come and see what everything looks like halfway through."},
+    {title:"Critique Evening",categories:["Meetup"],tags:["Free"],excerpt:"Structured feedback in small groups, for work at any stage."},
+    {title:"Screenprint Day",categories:["Workshop"],tags:["Paid"],excerpt:"One colour, one afternoon, one poster you actually want on a wall."},
+    {title:"Annual Showcase",categories:["Exhibition"],tags:["Ticketed"],excerpt:"A year of studio work in one room, for one week only."},
+    {title:"New Year Social",categories:["Meetup"],tags:["Free"],excerpt:"No talks, no slides. Just the people who make things in this city."}
+  ]
+};
+SAMPLES.other = SAMPLES.blog;
+
+function sampleItems(type,n){
+  const base=SAMPLES[type]||SAMPLES.other;
+  const now=Date.now();
+  return base.slice(0,n).map((it,i)=>({
+    id:"s"+i, title:it.title, categories:it.categories||[], tags:it.tags||[],
+    author:it.author||"", date: now - (i*9)*86400000,
+    price: it.price!=null ? (function(){
+      const m=money(it.price/100);
+      if(it.sale){ m.onSale=true; m.sale=new Intl.NumberFormat(navigator.language||"en",{style:"currency",currency:"USD"}).format(it.sale/100); }
+      return m; })() : null,
     excerpt:it.excerpt, body:it.excerpt,
-    fullUrl:"/portfolio/"+it.title.toLowerCase().replace(/[^a-z0-9]+/g,"-"),
+    sectionColor:SECTION_COLORS[i%SECTION_COLORS.length],
+    fullUrl:"/"+type+"/"+it.title.toLowerCase().replace(/[^a-z0-9]+/g,"-"),
     image:placeholderImage(i,String(i+1).padStart(2,"0")), imageAlt:it.title,
-    sections:'<div class="pv-section"><h4>'+escapeHtml(it.title)+'</h4><div class="pv-fake-block"></div>'+
-             '<p>'+escapeHtml(it.excerpt)+'</p></div>'
+    sections:'<div id="sections" class="pv-sections">'+
+      '<section class="pv-section pv-section--hero"><h4>'+escapeHtml(it.title)+'</h4>'+
+      '<p>'+escapeHtml(it.excerpt)+'</p></section>'+
+      '<section class="pv-section"><div class="pv-img"><img src="'+placeholderImage(i,String(i+1).padStart(2,"0"))+'" alt=""></div></section>'+
+      '<section class="pv-section"><div class="pv-cols">'+
+        '<div><h5>Role</h5><p>'+escapeHtml((it.categories||["Design"])[0])+', art direction, build</p></div>'+
+        '<div><h5>Year</h5><p>'+(2020+i%5)+'</p></div>'+
+      '</div></section>'+
+      '</div>'
   }));
 }
 
@@ -1476,6 +1843,7 @@ function readSettings(){
   return {
     source:val("source").trim(),
     panelLimit:Math.max(1,Math.min(MAX_PANELS,num("panelLimit"))),
+    collectionType:currentType(),
     contentMode:val("contentMode"),
     reverseOrder:chk("reverseOrder"),
     titleSource:val("titleSource"),
@@ -1486,9 +1854,23 @@ function readSettings(){
     showTitleInPanel:chk("showTitleInPanel"),
     showExcerpt:chk("showExcerpt"),
     excerptLength:num("excerptLength"),
+    textSource:val("textSource"),
+    showCategories:chk("showCategories"),
+    showTags:chk("showTags"),
+    showPrice:chk("showPrice"),
+    showDate:chk("showDate"),
+    showAuthor:chk("showAuthor"),
+    metaStyle:val("metaStyle"),
+    metaPosition:val("metaPosition"),
     showImage:chk("showImage"),
+    cardLayout:val("cardLayout"),
+    splitSide:val("splitSide"),
+    splitRatio:num("splitRatio"),
     imageFit:val("imageFit"),
     mediaHeight:num("mediaHeight"),
+    mediaRadius:num("mediaRadius"),
+    mediaBorderWidth:num("mediaBorderWidth"),
+    mediaBorderColor:chk("mediaBorderInherit")?"currentColor":val("mediaBorderColor"),
     showButton:chk("showButton"),
     buttonLabel:val("buttonLabel"),
     buttonTarget:val("buttonTarget"),
@@ -1500,7 +1882,7 @@ function readSettings(){
     minPanelHeight:val("minPanelHeight"),
     maxPanelHeight:val("maxPanelHeight"),
     railWidth:railWidthValue(),
-    panelGap:num("panelGap"),
+    panelGap:chk("showGap")?Math.max(1,num("panelGap")):0,
     borderRadius:num("borderRadius"),
     borderWidth:num("borderWidth"),
     borderColor:chk("borderInherit")?"currentColor":val("borderColor"),
@@ -1557,32 +1939,138 @@ function readSettings(){
   };
 }
 
+/* ---------- collection type ---------- */
+const TYPES={
+  portfolio:{ url:"/portfolio", mode:"sections", label:"Portfolio",
+    hint:"The page slug of your portfolio \u2014 usually <code class='inl'>/portfolio</code>. Each item\u2019s page is fetched and its sections dropped into the panel.",
+    fields:["categories","tags"], textLabel:"Excerpt", dateLabel:"Date",
+    designs:["rails","fullbleed","minimal"] },
+  blog:{ url:"/blog", mode:"fields", label:"Blog",
+    hint:"The page slug of your blog \u2014 usually <code class='inl'>/blog</code>.",
+    fields:["categories","tags","date","author"], textLabel:"Excerpt", dateLabel:"Published date",
+    designs:["editorial","rails","minimal","fullbleed"] },
+  events:{ url:"/events", mode:"fields", label:"Events",
+    hint:"The page slug of your events page. Upcoming and past events are both included.",
+    fields:["categories","tags","date"], textLabel:"Excerpt", dateLabel:"Event date",
+    designs:["editorial","rails","minimal"] },
+  products:{ url:"/shop", mode:"fields", label:"Products",
+    hint:"The page slug of your store \u2014 often <code class='inl'>/shop</code> or <code class='inl'>/store</code>.",
+    fields:["price","categories","tags"], textLabel:"Product description", dateLabel:"Date",
+    designs:["catalogue","rails","minimal","fullbleed"] },
+  other:{ url:"/", mode:"fields", label:"Collection",
+    hint:"The page slug of the collection you want to pull from.",
+    fields:["categories","tags","date"], textLabel:"Excerpt", dateLabel:"Date",
+    designs:["rails","minimal","fullbleed","editorial"] }
+};
+const FEATURED_NOTE=" Add <code class='inl'>?featured</code> to the end to use starred items only.";
+
+function currentType(){ return val("collectionType"); }
+
+function onTypeChange(){
+  const t=currentType();
+  const cfg=TYPES[t];
+  $("rowSource").hidden=!cfg;
+  $("afterType").hidden=!cfg;
+  if(!cfg){ sync(); return; }
+
+  if(!$("source").value.trim() || Object.values(TYPES).some(x=>x.url===$("source").value.trim())){
+    $("source").value=cfg.url;
+  }
+  $("sourceHint").innerHTML=cfg.hint+FEATURED_NOTE;
+
+  // Detail toggles a collection can't supply are switched off, not just hidden,
+  // so a leftover "show price" never rides along into a blog config.
+  ["price","categories","tags","date","author"].forEach(f=>{
+    if(cfg.fields.indexOf(f)===-1) $("show"+f[0].toUpperCase()+f.slice(1)).checked=false;
+  });
+
+  renderDesigns();
+  applyDesign(cfg.designs[0]);
+}
+function pickType(t){ $("collectionType").value=t; onTypeChange(); }
+
 /* ---------- presets ---------- */
 let currentPreset="rails";
-const PRESETS={
-  rails:{heightMode:"fixed",fixedHeight:"620px",panelGap:8,borderRadius:14,borderWidth:0,
-    showNumber:"pad",showNumberInRail:true,iconShape:"circle",iconPlacement:"bottom",
-    contentAlign:"bottom",titleAlign:"end",imageFit:"contain",mediaHeight:300,colorMode:"custom",
-    fullWidth:false,contentPadding:40,railWidthMode:"equal"},
-  fullbleed:{heightMode:"fixed",fixedHeight:"100vh",panelGap:0,borderRadius:0,borderWidth:0,
-    showNumber:"none",iconShape:"bare",iconPlacement:"bottom",contentAlign:"bottom",
-    titleAlign:"end",imageFit:"cover",mediaHeight:240,colorMode:"ramp",fullWidth:true,contentPadding:56,
-    railWidthMode:"fixed",railWidthPx:70},
-  minimal:{heightMode:"content",panelGap:0,borderRadius:0,borderWidth:1,showNumber:"none",
-    iconShape:"bare",iconPlacement:"top",contentAlign:"top",titleAlign:"center",
-    imageFit:"inline",mediaHeight:200,colorMode:"theme",fullWidth:false,contentPadding:36,railWidthMode:"equal"}
+const DESIGNS={
+  rails:{ label:"Rails", sub:"Coloured panels, numbered",
+    art:['#12312a 5','#2f6350 1','#8d9d92 1','#f26522 1'], radius:14, gap:true,
+    values:{heightMode:"fixed",fixedHeight:"620px",showGap:false,panelGap:8,borderRadius:14,borderWidth:0,
+      showNumber:"pad",showNumberInRail:true,iconShape:"circle",iconPlacement:"bottom",
+      contentAlign:"bottom",titleAlign:"end",cardLayout:"stacked",imageFit:"contain",mediaHeight:300,overlayTint:0,
+      colorMode:"custom",fullWidth:false,contentPadding:40,railWidthMode:"equal",
+      metaStyle:"pill",metaPosition:"above",buttonStyle:"primary"} },
+  fullbleed:{ label:"Full bleed", sub:"Edge to edge, full height",
+    art:['#111111 5','#e2e2e2 1','#cacaca 1','#b2b2b2 1'], radius:0, gap:false,
+    values:{heightMode:"fixed",fixedHeight:"100vh",showGap:false,panelGap:8,borderRadius:0,borderWidth:0,
+      showNumber:"none",iconShape:"bare",iconPlacement:"bottom",contentAlign:"bottom",
+      titleAlign:"end",cardLayout:"stacked",imageFit:"cover",overlayTint:35,colorMode:"ramp",fullWidth:true,
+      contentPadding:56,railWidthMode:"fixed",railWidthPx:70,
+      metaStyle:"plain",metaPosition:"above",buttonStyle:"secondary"} },
+  minimal:{ label:"Minimal", sub:"Hairlines, theme colours",
+    art:['#ffffff 5','#ffffff 1','#ffffff 1','#ffffff 1'], radius:0, gap:false, outline:true,
+    values:{heightMode:"content",showGap:false,panelGap:8,borderRadius:0,borderWidth:1,showNumber:"none",
+      iconShape:"bare",iconPlacement:"top",contentAlign:"top",titleAlign:"center",
+      cardLayout:"stacked",imageFit:"inline",mediaHeight:200,overlayTint:0,colorMode:"theme",fullWidth:false,
+      contentPadding:36,railWidthMode:"equal",
+      metaStyle:"plain",metaPosition:"below",buttonStyle:"link"} },
+  editorial:{ label:"Editorial", sub:"Two columns, photo led",
+    art:['#2f4858 5','#e8ded1 1','#1b1b1b 1','#dfe6e2 1'], radius:0, gap:false,
+    values:{heightMode:"fixed",fixedHeight:"78vh",showGap:false,panelGap:8,borderRadius:0,borderWidth:0,
+      showNumber:"none",iconShape:"bare",iconPlacement:"bottom",contentAlign:"bottom",
+      titleAlign:"end",cardLayout:"split",splitSide:"left",splitRatio:50,imageFit:"cover",
+      mediaRadius:0,mediaBorderWidth:0,overlayTint:0,colorMode:"section",fullWidth:false,
+      contentPadding:52,railWidthMode:"equal",contentAlignOverride:"center",
+      metaStyle:"plain",metaPosition:"above",buttonStyle:"link",
+      showCategories:true,showDate:true,showTags:false,showAuthor:false} },
+  catalogue:{ label:"Catalogue", sub:"Image beside price and title",
+    art:['#f4f1ea 5','#e8ded1 1','#dfe6e2 1','#eef2f5 1'], radius:10, gap:true,
+    values:{heightMode:"fixed",fixedHeight:"560px",showGap:false,panelGap:6,borderRadius:10,borderWidth:1,
+      showNumber:"none",iconShape:"square",iconPlacement:"bottom",contentAlign:"bottom",
+      titleAlign:"end",cardLayout:"split",splitSide:"left",splitRatio:52,imageFit:"contain",
+      mediaHeight:280,mediaRadius:8,mediaBorderWidth:0,overlayTint:0,colorMode:"theme",
+      fullWidth:false,contentPadding:32,railWidthMode:"equal",
+      metaStyle:"pill",metaPosition:"above",buttonStyle:"primary",
+      showPrice:true,showCategories:true,showTags:false,buttonLabel:"View product"} }
 };
-function applyPreset(name){
+
+function designArt(d){
+  return '<span class="preset-art"'+(d.outline?' style="border:1px solid #d5d9de"':'')+'>'+
+    d.art.map((a,i)=>{const [c,f]=a.split(" ");
+      return '<i style="flex:'+f+';background:'+c+
+        (d.radius?';border-radius:'+Math.min(d.radius,6)+'px':'')+
+        (d.outline&&i?';border-left:1px solid #d5d9de':'')+
+        (d.gap?'':'')+'"></i>';}).join("")+'</span>';
+}
+function renderDesigns(){
+  const cfg=TYPES[currentType()];
+  const list=cfg?cfg.designs:["rails"];
+  $("presetList").innerHTML=list.map(name=>{
+    const d=DESIGNS[name];
+    return '<button class="preset'+(name===currentPreset?" on":"")+'" data-preset="'+name+'" onclick="applyDesign(\''+name+'\')">'+
+      designArt(d)+'<span>'+d.label+'</span><span class="preset-sub">'+d.sub+'</span></button>';
+  }).join("");
+}
+function applyDesign(name){
+  const d=DESIGNS[name];
+  if(!d)return;
   currentPreset=name;
-  const p=PRESETS[name];
-  Object.keys(p).forEach(k=>{
+  Object.keys(d.values).forEach(k=>{
     const el=$(k);
     if(!el)return;
-    if(el.type==="checkbox")el.checked=!!p[k];else el.value=p[k];
+    if(el.type==="checkbox")el.checked=!!d.values[k]; else el.value=d.values[k];
   });
-  document.querySelectorAll(".preset").forEach(b=>b.classList.toggle("on",b.dataset.preset===name));
+  // Only turn on details the chosen collection actually has.
+  const cfg=TYPES[currentType()]||TYPES.other;
+  ["price","categories","tags","date","author"].forEach(f=>{
+    if(cfg.fields.indexOf(f)===-1) $("show"+f[0].toUpperCase()+f.slice(1)).checked=false;
+  });
+  if(d.values.contentAlignOverride) $("contentAlign").value=d.values.contentAlignOverride;
+  if(currentType()==="products") $("textSource").value="body";
+  renderDesigns();
   sync();
 }
+// kept for the older call sites
+function applyPreset(name){ applyDesign(name); }
 
 /* ---------- custom colour rows ---------- */
 const TRASH='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>';
@@ -1607,26 +2095,76 @@ function addColorRow(){
 
 /* ---------- conditional fields ---------- */
 function updateVisibility(s){
+  const cfg = TYPES[s.collectionType] || TYPES.other;
+  const has = f => cfg.fields.indexOf(f) !== -1;
+  const mode = resolveMode(s);
+  const fields = mode === "fields";
+
   $("rowCustomTitles").hidden = s.titleSource!=="custom";
+
+  /* --- body text --- */
+  $("rowTextSource").hidden = !fields;
+  $("textSourceHint").textContent = s.collectionType==="products"
+    ? "Products keep the short blurb in the excerpt and the long copy in the description."
+    : "The excerpt is what Squarespace shows in list views; the full description is the whole post body.";
+  $("labelShowExcerpt").textContent = "Show the " +
+    (s.textSource==="body" ? "full description" : cfg.textLabel.toLowerCase());
   $("rowExcerptLength").hidden = !s.showExcerpt;
-  $("rowImageFit").hidden = !s.showImage;
-  $("rowTint").hidden = !(s.showImage && s.imageFit==="cover");
-  $("rowMediaHeight").hidden = !(s.showImage && s.imageFit!=="cover");
+
+  /* --- details: only what this collection actually has --- */
+  $("detailsHead").hidden = !fields;
+  $("detailsHint").hidden = !fields;
+  $("detailsHint").textContent = "What a " + cfg.label.toLowerCase() + " collection can show.";
+  $("rowShowPrice").hidden      = !fields || !has("price");
+  $("rowShowCategories").hidden = !fields || !has("categories");
+  $("rowShowTags").hidden       = !fields || !has("tags");
+  $("rowShowDate").hidden       = !fields || !has("date");
+  $("rowShowAuthor").hidden     = !fields || !has("author");
+  $("labelShowDate").textContent = cfg.dateLabel;
+  const anyMeta = s.showCategories || s.showTags || s.showDate || s.showAuthor;
+  $("rowMetaStyle").hidden = !fields || !anyMeta;
+
+  /* --- image --- */
+  $("rowCardLayout").hidden = !fields || !s.showImage;
+  $("rowSplitOpts").hidden = !fields || !s.showImage || s.cardLayout!=="split";
+  $("rowImageFit").hidden = !fields || !s.showImage || s.cardLayout==="split";
+  $("rowMediaHeight").hidden = !fields || !s.showImage || s.cardLayout==="split" || s.imageFit==="cover";
+  $("rowMediaFrame").hidden = !fields || !s.showImage;
+  $("rowMediaBorderInherit").hidden = !fields || !s.showImage || num("mediaBorderWidth")<=0;
+  $("rowMediaBorderColor").hidden = $("rowMediaBorderInherit").hidden || chk("mediaBorderInherit");
+  $("rowTint").hidden = !fields || !s.showImage ||
+    !(s.cardLayout!=="split" && s.imageFit==="cover");
   $("btnArea").hidden = !s.showButton;
+
+  /* --- layout --- */
+  $("rowPanelGap").hidden = !chk("showGap");
   $("rowFixedHeight").hidden = s.heightMode!=="fixed";
   $("rowMinMax").hidden = s.heightMode==="fixed";
   $("rowRailWidth").hidden = val("railWidthMode")!=="fixed";
   $("borderColor").parentElement.hidden = chk("borderInherit");
+
+  /* --- colour --- */
   $("rowRamp").hidden = s.colorMode!=="ramp";
   $("rampHint").hidden = s.colorMode!=="ramp";
   $("customArea").hidden = s.colorMode!=="custom";
+  $("colorModeHint").innerHTML = {
+    theme:"Panels stay transparent and take the colour of whatever Squarespace section you drop the accordion into.",
+    section:"Each panel picks up the background of the first section on that item\u2019s own page, so the accordion reads as a set of those pages. Text colour follows automatically.",
+    ramp:"Steps evenly from the first colour to the last across the panels. Text colour is chosen for contrast on each step.",
+    custom:"One row per panel, in order. Panels past the last row fall back to the section theme."
+  }[s.colorMode] || "";
+
+  /* --- titles & icons --- */
   $("rowTitleColor").hidden = chk("titleColorInherit");
   $("rowCustomIcon").hidden = s.iconStyle!=="custom";
   $("rowIconOpts").hidden = s.iconStyle==="none";
   $("rowIconSize").hidden = s.iconStyle==="none";
+
+  /* --- behaviour --- */
   $("autoArea").hidden = !s.autoplay;
   $("rowScrollOffset").hidden = !s.scrollToOnOpen;
-  $("fieldsNote").hidden = s.contentMode==="fields";
+
+  $("fieldsNote").hidden = fields;
 }
 
 /* ---------- preview ---------- */
@@ -1644,11 +2182,10 @@ function buildPreview(s){
   const root=$("pvMount");
   if(pv&&pv.cleanup)pv.cleanup();
 
-  const mode = s.contentMode==="auto"
-    ? (/portfolio/i.test(s.source) ? "sections" : "fields")
-    : s.contentMode;
+  const mode = resolveMode(s);
 
-  let items=sampleItems(MAX_PANELS).map(it=>({...it, body: mode==="sections"?it.sections:it.body}));
+  let items=sampleItems(s.collectionType||"other",MAX_PANELS)
+    .map(it=>({...it, body: mode==="sections"?it.sections:it.body}));
   if(s.reverseOrder)items.reverse();
   items=items.slice(0,s.panelLimit);
 
@@ -1661,6 +2198,20 @@ function buildPreview(s){
   const titles=panels.map(p=>p.querySelector(".accordion-title"));
   const wrappers=panels.map(p=>p.querySelector(".accordion-content-wrapper"));
 
+  s.__items=items;
+
+  // The preview pane stands in for the browser viewport, so vh-based heights are
+  // resolved against the pane. 78vh then means what it will mean on a real screen
+  // — otherwise a tall design is always clipped and the rails can't be judged.
+  const paneH=root.closest(".pv-scroll").clientHeight||600;
+  const toPane=v=>{
+    const m=/^(-?\d*\.?\d+)vh$/.exec(String(v||"").trim());
+    return m ? (parseFloat(m[1])/100*paneH)+"px" : v;
+  };
+  s.fixedHeight=toPane(s.fixedHeight);
+  s.minPanelHeight=toPane(s.minPanelHeight);
+  s.maxPanelHeight=toPane(s.maxPanelHeight);
+
   applyStyleVars(root,component,s,panels.length);
   root.classList.add("loaded");
 
@@ -1672,7 +2223,7 @@ function buildPreview(s){
   const isMobile=()=> s.mobileLayout==="stacked" && viewport.getBoundingClientRect().width<=s.mobileBreakpoint;
 
   function contentNodeOf(panel){
-    return panel.querySelector(".pv-section")||panel.querySelector(".va-card")||panel.querySelector(".accordion-content");
+    return panel.querySelector("#sections")||panel.querySelector(".va-card")||panel.querySelector(".accordion-content");
   }
   function measure(){
     const mobile=isMobile();
@@ -1699,7 +2250,14 @@ function buildPreview(s){
     const cw=component.getBoundingClientRect().width;
     const gapTotal=Math.max(0,panels.length-1)*toNumber(s.panelGap,0);
     component.style.setProperty("--va-active-width",Math.max(0,Math.floor(cw-railTotal-gapTotal))+"px");
+    applyPanelWidths();
     measureTallest();
+  }
+  // Written inline so the width transition always has a concrete from / to.
+  function applyPanelWidths(){
+    if(isMobile()){ wrappers.forEach(w=>w.style.width=""); return; }
+    const aw=component.style.getPropertyValue("--va-active-width")||"0px";
+    wrappers.forEach((w,i)=>{ w.style.width = i===activeIndex ? aw : "0px"; });
   }
   function naturalHeight(node){
     const prev=node.style.minHeight;
@@ -1731,6 +2289,7 @@ function buildPreview(s){
       wrappers[j].setAttribute("aria-hidden",on?"false":"true");
     });
     root.classList.remove("va-none-active");
+    applyPanelWidths();
     if(isMobile())measureMobileHeight();
   }
   function close(){
@@ -1738,6 +2297,7 @@ function buildPreview(s){
     activeIndex=-1;
     panels.forEach((p,j)=>{p.classList.remove("panel-active");titles[j].setAttribute("aria-expanded","false");});
     root.classList.add("va-none-active");
+    applyPanelWidths();
   }
   function step(d){
     let n=activeIndex+d;
@@ -1787,8 +2347,13 @@ function buildPreview(s){
   pv={cleanup(){ if(timer)clearInterval(timer); ro.disconnect(); }};
 }
 
+function resolveMode(s){
+  if(s.contentMode!=="auto") return s.contentMode;
+  return (TYPES[s.collectionType]||TYPES.other).mode;
+}
+
 /* ---------- code output ---------- */
-const OMIT_FROM_CONFIG=["source"];
+const OMIT_FROM_CONFIG=["source","collectionType"];
 function diffFromDefaults(s){
   const out={};
   Object.keys(s).forEach(k=>{
@@ -1803,7 +2368,8 @@ function diffFromDefaults(s){
 const CDN="https://cdn.jsdelivr.net/gh/square-design-lab/Vertical-Accordion@main/";
 
 function buildCode(s){
-  const markup='<div data-sdl-plugin="vertical-accordions" data-source="'+escapeHtml(s.source||"/portfolio")+'"></div>';
+  const markup='<div data-sdl-plugin="vertical-accordions" data-source="'+
+    escapeHtml(s.source||(TYPES[s.collectionType]||TYPES.other).url)+'"></div>';
   const diff=diffFromDefaults(s);
   const settings=Object.keys(diff).length
     ? "<script>\n  window.sdlVerticalAccordionSettings = "+JSON.stringify(diff,null,2).replace(/\n/g,"\n  ")+";\n<\/script>\n\n"
@@ -1834,16 +2400,29 @@ function copyCode(){
 
 function sync(){
   const s=readSettings();
+  const chosen=!!TYPES[s.collectionType];
+  $("pvEmpty").hidden=chosen;
+  $("pvMount").hidden=!chosen;
+  if(!chosen){
+    if(pv&&pv.cleanup){pv.cleanup();pv=null;}
+    $("pvMount").innerHTML="";
+    $("pvUrl").textContent="—";
+    $("outMarkup").textContent="Choose a collection type first.";
+    $("outInject").textContent="Choose a collection type first.";
+    return;
+  }
   updateVisibility(s);
-  $("pvUrl").textContent = s.source || "/portfolio";
+  $("pvUrl").textContent = s.source || "/";
   const code=buildCode(s);
   $("outMarkup").textContent=code.markup;
   $("outInject").textContent=code.inject;
-  buildPreview(s);
+  // buildPreview rewrites vh units for the pane, so hand it a copy.
+  buildPreview({...s});
 }
 
 renderColorRows();
 applyPreset("rails");
+onTypeChange();
 showTab("preview");
 </script>
 </body>

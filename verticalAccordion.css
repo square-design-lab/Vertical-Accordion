@@ -256,6 +256,11 @@
    Content
    -------------------------------------------------------------------------- */
 
+/* The open panel's width is written inline by the script rather than pulled
+   from --va-active-width here: a `transition: width` whose target comes from a
+   custom property can latch on its start value when the property and the
+   .panel-active class land in the same style flush, leaving the panel stuck
+   shut. An explicit px value always gives the transition a real from and to. */
 [data-sdl-plugin="vertical-accordions"] .accordion-content-wrapper {
   flex: 0 0 auto;
   width: 0;
@@ -263,7 +268,10 @@
   transition: width var(--va-transition-duration) var(--va-easing);
 }
 
-[data-sdl-plugin="vertical-accordions"] .panel-active .accordion-content-wrapper {
+/* No-JS / pre-measure fallback so the first panel isn't invisible. */
+[data-sdl-plugin="vertical-accordions"]:not(.loaded)
+  .panel-active
+  .accordion-content-wrapper {
   width: var(--va-active-width, 0px);
 }
 
@@ -303,7 +311,8 @@
 [data-sdl-plugin="vertical-accordions"] .va-card__media {
   position: relative;
   overflow: hidden;
-  border-radius: inherit;
+  border-radius: var(--va-media-radius, 0px);
+  border: var(--va-media-border-width, 0px) solid var(--va-media-border-color, currentColor);
 }
 
 [data-sdl-plugin="vertical-accordions"] .va-card__media img {
@@ -334,6 +343,55 @@
 [data-sdl-plugin="vertical-accordions"] .va-card__media[data-fit="inline"] {
   flex: 0 0 auto;
   height: var(--va-media-height, 200px);
+}
+
+/* --------------------------------------------------------------------------
+   Split card — image in one column, words in the other. The default for blog,
+   events and product collections on desktop.
+   -------------------------------------------------------------------------- */
+
+[data-sdl-plugin="vertical-accordions"][data-card-layout="split"] .va-card {
+  flex-direction: row;
+  align-items: stretch;
+  gap: var(--va-content-padding, 40px);
+}
+
+[data-sdl-plugin="vertical-accordions"][data-card-layout="split"][data-split-side="right"] .va-card {
+  flex-direction: row-reverse;
+}
+
+[data-sdl-plugin="vertical-accordions"][data-card-layout="split"] .va-card__media[data-fit="split"] {
+  position: relative;
+  inset: auto;
+  flex: 0 0 var(--va-split-ratio, 50%);
+  min-width: 0;
+  align-self: stretch;
+}
+
+[data-sdl-plugin="vertical-accordions"][data-card-layout="split"]
+  .va-card__media[data-fit="split"] img {
+  object-fit: cover;
+}
+
+[data-sdl-plugin="vertical-accordions"][data-card-layout="split"] .va-card__body {
+  flex: 1 1 auto;
+  min-width: 0;
+  align-self: center;
+  max-width: 46ch;
+}
+
+[data-sdl-plugin="vertical-accordions"][data-card-layout="split"][data-content-align="top"] .va-card__body {
+  align-self: flex-start;
+}
+[data-sdl-plugin="vertical-accordions"][data-card-layout="split"][data-content-align="bottom"] .va-card__body {
+  align-self: flex-end;
+}
+
+/* Nothing to split when there's no image. */
+[data-sdl-plugin="vertical-accordions"][data-card-layout="split"]
+  .va-card:not(:has(.va-card__media))
+  .va-card__body {
+  max-width: 62ch;
 }
 
 [data-sdl-plugin="vertical-accordions"] .va-card__tint {
@@ -372,6 +430,74 @@
   margin: 0;
   font-size: var(--va-excerpt-size, inherit);
   opacity: 0.88;
+}
+
+/* --- item metadata: categories, tags, date, author --- */
+
+[data-sdl-plugin="vertical-accordions"] .va-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--va-meta-size, 0.78em);
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-card__meta > li {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-card__meta[data-style="pill"] > li > .va-meta__item {
+  padding: 0.5em 0.85em;
+  border: 1px solid currentColor;
+  border-radius: 99px;
+  opacity: 0.75;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-card__meta[data-style="plain"] {
+  gap: 0;
+  opacity: 0.72;
+}
+
+/* A thin separator between plain meta entries, but not before the first. */
+[data-sdl-plugin="vertical-accordions"]
+  .va-card__meta[data-style="plain"]
+  > li:not(:first-child)
+  > .va-meta__item::before {
+  content: "";
+  display: inline-block;
+  width: 1px;
+  height: 0.85em;
+  margin: 0 0.75em -0.08em;
+  background: currentColor;
+  opacity: 0.45;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-card__price {
+  margin: 0;
+  font-size: var(--va-price-size, 1.15em);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-card__price-from {
+  font-weight: 400;
+  opacity: 0.7;
+}
+
+[data-sdl-plugin="vertical-accordions"] .va-card__price--sale s {
+  opacity: 0.55;
+  font-weight: 400;
+  margin-right: 0.35em;
 }
 
 [data-sdl-plugin="vertical-accordions"] .va-card__link {
@@ -572,6 +698,22 @@
 [data-sdl-plugin="vertical-accordions"].va-mobile .va-card {
   min-height: 0;
   padding: max(20px, calc(var(--va-content-padding) * 0.6));
+}
+
+/* A two-column split has nowhere to go on a phone — stack it. */
+[data-sdl-plugin="vertical-accordions"].va-mobile[data-card-layout="split"] .va-card,
+[data-sdl-plugin="vertical-accordions"].va-mobile[data-card-layout="split"][data-split-side="right"] .va-card {
+  flex-direction: column;
+  gap: 1.2em;
+}
+[data-sdl-plugin="vertical-accordions"].va-mobile[data-card-layout="split"] .va-card__body {
+  align-self: stretch;
+  max-width: none;
+}
+[data-sdl-plugin="vertical-accordions"].va-mobile .va-card__media[data-fit="split"] {
+  flex: 0 0 auto;
+  height: 220px;
+  align-self: stretch;
 }
 
 [data-sdl-plugin="vertical-accordions"].va-mobile .va-card__media[data-fit="cover"] {

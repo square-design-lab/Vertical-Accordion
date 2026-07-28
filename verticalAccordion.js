@@ -40,12 +40,27 @@
     showExcerpt: true,
     excerptLength: 240,
     showImage: true,
+    cardLayout: "stacked", // stacked | split (image in its own column)
+    splitSide: "left", // left | right — which side the image column sits on
+    splitRatio: 50, // % of the panel given to the image column
     imageFit: "cover", // cover | contain | inline
     mediaHeight: 240, // px — height of a contain / inline image
+    mediaRadius: 0,
+    mediaBorderWidth: 0,
+    mediaBorderColor: "currentColor",
     showButton: true,
     buttonLabel: "Read more",
     buttonTarget: "_self",
     buttonStyle: "primary", // primary | secondary | link
+    /* Item metadata — the config UI only offers the ones a given collection has */
+    textSource: "excerpt", // excerpt | body  (products use body for the description)
+    showCategories: false,
+    showTags: false,
+    showPrice: false,
+    showDate: false,
+    showAuthor: false,
+    metaStyle: "pill", // pill | plain
+    metaPosition: "above", // above | below  (relative to the title)
     weglotPaths: undefined,
 
     /* ---- Layout ---- */
@@ -85,7 +100,7 @@
     mobileLayout: "stacked", // stacked | horizontal
 
     /* ---- Styling ---- */
-    colorMode: "theme", // theme | ramp | custom
+    colorMode: "theme", // theme | section | ramp | custom
     rampFrom: "#f2f2f2",
     rampTo: "#111111",
     panelColors: [], // [{ bg, hover, text }]
@@ -97,6 +112,8 @@
     titlePadding: 16,
     numberSize: "",
     excerptSize: "",
+    metaSize: "",
+    priceSize: "",
     iconStyle: "plus", // plus | arrow | chevron | none | custom
     icon: "",
     iconPlacement: "bottom", // top | bottom
@@ -277,6 +294,68 @@
     return 0.2126 * chan(c.r) + 0.7152 * chan(c.g) + 0.0722 * chan(c.b) > 0.42;
   }
 
+  function formatDate(ms) {
+    if (!ms) return "";
+    try {
+      return new Intl.DateTimeFormat(navigator.language || "en", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }).format(new Date(ms));
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function formatMoney(money) {
+    if (!money) return "";
+    const amount = parseFloat(money.value != null ? money.value : money.decimalValue);
+    if (isNaN(amount)) return "";
+    const currency = money.currency || money.currencyCode;
+    try {
+      return new Intl.NumberFormat(navigator.language || "en", {
+        style: "currency",
+        currency: currency || "USD",
+      }).format(amount);
+    } catch (e) {
+      return (currency ? currency + " " : "") + amount.toFixed(2);
+    }
+  }
+
+  // Squarespace puts the real money on the variants; the item-level priceMoney is
+  // often 0.00. Take the range across variants and fall back to the item.
+  function priceFor(item) {
+    const structured = item.structuredContent || {};
+    const variants = item.variants || structured.variants || [];
+    const priced = variants
+      .map((variant) => variant.priceMoney)
+      .filter((money) => money && parseFloat(money.value != null ? money.value : money.decimalValue) > 0);
+
+    let base = priced[0] || item.priceMoney || structured.priceMoney || null;
+    if (base && parseFloat(base.value != null ? base.value : base.decimalValue) === 0) {
+      base = priced[0] || null;
+    }
+    if (!base) return null;
+
+    const amounts = priced.map((money) => parseFloat(money.value != null ? money.value : money.decimalValue));
+    const min = amounts.length ? Math.min.apply(null, amounts) : parseFloat(base.value);
+    const max = amounts.length ? Math.max.apply(null, amounts) : min;
+
+    const onSale = !!(item.onSale || structured.onSale);
+    const saleMoney = onSale
+      ? (variants.find((variant) => variant.salePriceMoney) || {}).salePriceMoney ||
+        item.salePriceMoney ||
+        structured.salePriceMoney
+      : null;
+
+    return {
+      display: formatMoney(Object.assign({}, base, { value: String(min) })),
+      ranged: max > min,
+      onSale: onSale && !!saleMoney,
+      sale: saleMoney ? formatMoney(saleMoney) : "",
+    };
+  }
+
   function prefersReducedMotion() {
     return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   }
@@ -348,6 +427,17 @@
     return promise;
   }
 
+  // The colour theme of an item page's first section — used by colorMode "section"
+  // so a panel can inherit the colour of the page it was pulled from.
+  function extractSectionTheme(html) {
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const section =
+      doc.querySelector("#sections section[data-section-theme]") ||
+      doc.querySelector("section[data-section-theme]") ||
+      doc.querySelector("[data-section-theme]");
+    return section ? section.getAttribute("data-section-theme") || "" : "";
+  }
+
   function extractSectionsFromPageHtml(html) {
     const doc = new DOMParser().parseFromString(html, "text/html");
     const sections =
@@ -364,15 +454,6 @@
       el.removeAttribute("data-page-sections");
     });
     return sections.outerHTML;
-  }
-
-  async function fetchItemSections(fullUrl) {
-    try {
-      return extractSectionsFromPageHtml(await fetchPageHtml(fullUrl));
-    } catch (error) {
-      console.error(PLUGIN_TITLE + ": could not fetch item page " + fullUrl, error);
-      return "";
-    }
   }
 
   // Fetch a collection as JSON and normalise its items. Events collections keep
@@ -414,17 +495,37 @@
       /portfolio/i.test(typeName) ||
       (rawItems[0] && rawItems[0].recordTypeLabel === "portfolio-item");
 
-    const items = rawItems.map((item) => ({
-      id: item.id,
-      title: item.title || "",
-      body: item.body || "",
-      excerpt: item.excerpt || (item.seoData && item.seoData.seoDescription) || "",
-      fullUrl: item.fullUrl || "",
-      categories: item.categories || [],
-      tags: item.tags || [],
-      image: imageUrlFor(item),
-      imageAlt: (item.mediaFocalPoint && item.title) || item.title || "",
-    }));
+    // Products carry category ids rather than names; the names live in a nested tree.
+    const categoryNames = {};
+    (function walk(list) {
+      (list || []).forEach((entry) => {
+        if (entry && entry.id) categoryNames[entry.id] = entry.displayName || "";
+        if (entry && entry.children) walk(entry.children);
+      });
+    })(data.nestedCategories && data.nestedCategories.categories);
+
+    const items = rawItems.map((item) => {
+      const categories =
+        item.categories && item.categories.length
+          ? item.categories
+          : (item.categoryIds || []).map((id) => categoryNames[id]).filter(Boolean);
+
+      return {
+        id: item.id,
+        title: item.title || "",
+        body: item.body || "",
+        excerpt: item.excerpt || (item.seoData && item.seoData.seoDescription) || "",
+        fullUrl: item.fullUrl || "",
+        categories: categories,
+        tags: item.tags || [],
+        author: (item.author && item.author.displayName) || "",
+        date: item.startDate || item.publishOn || item.addedOn || 0,
+        price: priceFor(item),
+        sectionTheme: "",
+        image: imageUrlFor(item),
+        imageAlt: (item.mediaFocalPoint && item.title) || item.title || "",
+      };
+    });
 
     return { items, typeName, isPortfolio, collectionTitle: (data.collection && data.collection.title) || "" };
   }
@@ -664,31 +765,94 @@
     );
   }
 
+  function metaMarkup(item, settings) {
+    const bits = [];
+    const chip = (text, kind, attrs) =>
+      "<span class=\"va-meta__item va-meta__item--" + kind + "\"" + (attrs || "") + ">" +
+      escapeHtml(text) + "</span>";
+
+    if (settings.showCategories) (item.categories || []).forEach((c) => bits.push(chip(c, "category")));
+    if (settings.showTags) (item.tags || []).forEach((t) => bits.push(chip(t, "tag")));
+    if (settings.showDate && item.date) {
+      const date = formatDate(item.date);
+      // A real <time datetime> so the date is machine-readable, not just styled text.
+      if (date) {
+        bits.push(
+          '<time class="va-meta__item va-meta__item--date" datetime="' +
+            new Date(item.date).toISOString() + '">' + escapeHtml(date) + "</time>"
+        );
+      }
+    }
+    if (settings.showAuthor && item.author) bits.push(chip(item.author, "author"));
+
+    if (!bits.length) return "";
+    const style = settings.metaStyle === "pill" ? "pill" : "plain";
+    return (
+      '<ul class="va-card__meta" data-style="' + style + '">' +
+      bits.map((bit) => "<li>" + bit + "</li>").join("") +
+      "</ul>"
+    );
+  }
+
+  function priceMarkup(item, settings) {
+    if (!settings.showPrice || !item.price || !item.price.display) return "";
+    const price = item.price;
+    if (price.onSale && price.sale) {
+      return (
+        '<p class="va-card__price va-card__price--sale">' +
+        "<s>" + escapeHtml(price.display) + "</s> " +
+        "<span>" + escapeHtml(price.sale) + "</span></p>"
+      );
+    }
+    return (
+      '<p class="va-card__price">' +
+      (price.ranged ? '<span class="va-card__price-from">From </span>' : "") +
+      escapeHtml(price.display) +
+      "</p>"
+    );
+  }
+
+  function mediaMarkup(item, settings, titleShown) {
+    if (!settings.showImage || !item.image) return "";
+    // The image is decorative when the title it illustrates is right beside it;
+    // it only needs alt text when nothing else names the item.
+    const alt = titleShown ? "" : escapeHtml(item.imageAlt || item.title || "");
+    const fit = settings.cardLayout === "split" ? "split" : settings.imageFit;
+    return (
+      '<div class="va-card__media" data-fit="' + escapeHtml(fit) + '">' +
+      '<img src="' + escapeHtml(item.image) + '" alt="' + alt + '" loading="lazy" decoding="async">' +
+      (toNumber(settings.overlayTint, 0) > 0 && fit === "cover"
+        ? '<span class="va-card__tint" aria-hidden="true"></span>'
+        : "") +
+      "</div>"
+    );
+  }
+
   function cardMarkup(item, index, settings) {
     const number = formatNumber(index, settings.showNumber);
-    const excerptText = truncate(stripHtml(item.excerpt || item.body), settings.excerptLength);
+    const rawText = settings.textSource === "body" ? item.body || item.excerpt : item.excerpt || item.body;
+    const excerptText = truncate(stripHtml(rawText), settings.excerptLength);
 
-    const media =
-      settings.showImage && item.image
-        ? '<div class="va-card__media" data-fit="' + escapeHtml(settings.imageFit) + '">' +
-          '<img src="' + escapeHtml(item.image) + '" alt="' + escapeHtml(item.imageAlt) + '" loading="lazy">' +
-          (toNumber(settings.overlayTint, 0) > 0 ? '<span class="va-card__tint"></span>' : "") +
-          "</div>"
-        : "";
+    const media = mediaMarkup(item, settings, !!settings.showTitleInPanel);
 
+    const meta = metaMarkup(item, settings);
     const parts = [];
     if (number && settings.showNumber !== "none") {
-      parts.push('<span class="va-card__num">' + escapeHtml(number) + "</span>");
+      // Decorative: the panel already has an accessible name and position.
+      parts.push('<span class="va-card__num" aria-hidden="true">' + escapeHtml(number) + "</span>");
     }
+    if (meta && settings.metaPosition === "above") parts.push(meta);
     if (settings.showTitleInPanel) {
       const tag = escapeHtml(settings.titleTag || "h3");
       parts.push(
         "<" + tag + ' class="va-card__title">' + escapeHtml(titleFor(item, index, settings)) + "</" + tag + ">"
       );
     }
+    parts.push(priceMarkup(item, settings));
     if (settings.showExcerpt && excerptText) {
       parts.push('<p class="va-card__excerpt">' + escapeHtml(excerptText) + "</p>");
     }
+    if (meta && settings.metaPosition === "below") parts.push(meta);
     if (settings.showButton && item.fullUrl) {
       parts.push(
         '<a class="' + buttonClassFor(settings.buttonStyle) + '" href="' + escapeHtml(item.fullUrl) +
@@ -699,24 +863,28 @@
     }
 
     return (
-      '<div class="va-card">' +
+      '<article class="va-card">' +
       media +
-      '<div class="va-card__body">' + parts.join("") + "</div>" +
-      "</div>"
+      '<div class="va-card__body">' + parts.filter(Boolean).join("") + "</div>" +
+      "</article>"
     );
   }
 
   function panelMarkup(item, index, settings, mode, uid) {
     const railTitle = titleFor(item, index, settings);
     const number = formatNumber(index, settings.showNumber);
-    const tag = escapeHtml(settings.titleTag || "h3");
+    // The rail is only a heading when nothing inside the panel already is one.
+    // Otherwise every panel would emit the same heading text twice, which reads
+    // as a duplicate to search engines and to anyone browsing by heading.
+    const panelHasHeading = mode === "sections" || settings.showTitleInPanel;
+    const tag = panelHasHeading ? "span" : escapeHtml(settings.titleTag || "h3");
     const icon = iconMarkup(settings);
     const panelId = uid + "-panel-" + index;
     const buttonId = uid + "-title-" + index;
 
     const railNumber =
       settings.showNumberInRail && number && settings.showNumber !== "none"
-        ? '<span class="va-rail__num">' + escapeHtml(number) + "</span>"
+        ? '<span class="va-rail__num" aria-hidden="true">' + escapeHtml(number) + "</span>"
         : "";
 
     const content =
@@ -763,6 +931,10 @@
     set("--va-fixed-height", toLength(settings.fixedHeight, "620px"));
     set("--va-content-padding", toLength(settings.contentPadding, "40px"));
     set("--va-media-height", toLength(settings.mediaHeight, "240px"));
+    set("--va-media-radius", toLength(settings.mediaRadius, "0px"));
+    set("--va-media-border-width", toLength(settings.mediaBorderWidth, "0px"));
+    set("--va-media-border-color", settings.mediaBorderColor || "currentColor");
+    set("--va-split-ratio", toNumber(settings.splitRatio, 50) + "%");
     set("--va-accordion-title-padding", toLength(settings.titlePadding, "16px"));
     set("--va-accordion-title-color", settings.titleColor);
     set("--va-accordion-title-font-family", settings.titleFontFamily);
@@ -771,6 +943,8 @@
     set("--va-accordion-title-letter-spacing", settings.titleLetterSpacing);
     set("--va-number-size", settings.numberSize);
     set("--va-excerpt-size", settings.excerptSize);
+    set("--va-meta-size", settings.metaSize);
+    set("--va-price-size", settings.priceSize);
     set("--va-icon-width", toLength(settings.iconSize, "24px"));
     set("--va-overlay-tint", String(toNumber(settings.overlayTint, 0) / 100));
 
@@ -781,6 +955,8 @@
     root.dataset.contentAlign = settings.contentAlign;
     root.dataset.iconPlacement = settings.iconPlacement;
     root.dataset.iconShape = settings.iconShape;
+    root.dataset.cardLayout = settings.cardLayout;
+    root.dataset.splitSide = settings.splitSide;
     root.dataset.heightMode = settings.heightMode;
     root.dataset.colorMode = settings.colorMode;
     root.classList.toggle("va-full-width", !!settings.fullWidth);
@@ -815,6 +991,51 @@
     }
   }
 
+  // Resolve a Squarespace colour-theme name to real colours by probing the live
+  // page: a throwaway element carrying the theme attribute picks up the site's
+  // own theme variables, so we get exactly what that section would have painted.
+  const themeColorCache = new Map();
+  function themeColors(themeName) {
+    if (!themeName) return null;
+    if (themeColorCache.has(themeName)) return themeColorCache.get(themeName);
+
+    const probe = document.createElement("div");
+    probe.setAttribute("data-section-theme", themeName);
+    probe.className = "section-background";
+    probe.style.cssText =
+      "position:absolute;left:-9999px;top:0;width:1px;height:1px;visibility:hidden;pointer-events:none";
+    document.body.appendChild(probe);
+
+    const computed = getComputedStyle(probe);
+    const read = (name) => computed.getPropertyValue(name).trim();
+    const background = read("--siteBackgroundColor") || computed.backgroundColor;
+    const text = read("--headingLargeColor") || read("--siteTextColor") || computed.color;
+    probe.remove();
+
+    const resolved =
+      background && background !== "rgba(0, 0, 0, 0)"
+        ? { background: background, text: text || "" }
+        : null;
+    themeColorCache.set(themeName, resolved);
+    return resolved;
+  }
+
+  // colorMode "section": each panel takes the colour of the section the item's own
+  // page opens with, so the accordion reads as a set of those pages.
+  function applySectionColors(component, settings, items) {
+    if (settings.colorMode !== "section") return;
+    items.forEach((item, i) => {
+      const colors = themeColors(item.sectionTheme);
+      if (!colors) return;
+      component.style.setProperty("--va-panel-" + (i + 1) + "-background", colors.background);
+      if (colors.text) component.style.setProperty("--va-panel-" + (i + 1) + "-color", colors.text);
+      component.style.setProperty(
+        "--va-panel-hover-" + (i + 1) + "-background",
+        "color-mix(in srgb, " + colors.background + " 92%, " + (colors.text || "#000") + ")"
+      );
+    });
+  }
+
   /* ------------------------------------------------------------------ *
    *  Instance
    * ------------------------------------------------------------------ */
@@ -835,6 +1056,7 @@
     const wrappers = panels.map((panel) => panel.querySelector(".accordion-content-wrapper"));
 
     applyStyleVars(root, component, settings, panels.length);
+    applySectionColors(component, settings, items);
 
     let activeIndex = -1;
     let autoplayTimer = null;
@@ -889,8 +1111,21 @@
       const gapTotal = Math.max(0, panels.length - 1) * gap;
       const activeWidth = Math.max(0, Math.floor(componentWidth - railTotal - gapTotal));
       component.style.setProperty("--va-active-width", activeWidth + "px");
+      applyPanelWidths();
 
       measureTallestPanel();
+    }
+
+    // Written inline so the width transition always has a concrete from / to.
+    function applyPanelWidths() {
+      if (isMobile()) {
+        wrappers.forEach((wrapper) => (wrapper.style.width = ""));
+        return;
+      }
+      const activeWidth = component.style.getPropertyValue("--va-active-width") || "0px";
+      wrappers.forEach((wrapper, i) => {
+        wrapper.style.width = i === activeIndex ? activeWidth : "0px";
+      });
     }
 
     function contentNodeOf(panel) {
@@ -978,6 +1213,7 @@
         setFocusable(panel, on);
       });
       root.classList.remove("va-none-active");
+      applyPanelWidths();
 
       if (isMobile()) measureMobileHeight();
       if (!opts.silent) scrollIntoViewIfNeeded();
@@ -998,6 +1234,7 @@
         setFocusable(panel, false);
       });
       root.classList.add("va-none-active");
+      applyPanelWidths();
       emitEvent(PLUGIN_TITLE + ":close", { container: root, index: previous }, root);
     }
 
@@ -1223,10 +1460,31 @@
   async function hydrateSections(items) {
     await Promise.all(
       items.map(async (item) => {
-        if (item.body && item.body.indexOf('id="sections"') !== -1) return;
         if (!item.fullUrl) return;
-        const sections = await fetchItemSections(item.fullUrl);
-        if (sections) item.body = sections;
+        if (item.body && item.body.indexOf('id="sections"') !== -1) return;
+        try {
+          const html = await fetchPageHtml(item.fullUrl);
+          const sections = extractSectionsFromPageHtml(html);
+          if (sections) item.body = sections;
+          item.sectionTheme = extractSectionTheme(html);
+        } catch (error) {
+          console.error(PLUGIN_TITLE + ": could not fetch item page " + item.fullUrl, error);
+        }
+      })
+    );
+  }
+
+  // Field cards have no page markup of their own, so colorMode "section" still
+  // needs each item's page — but only its first section's theme name.
+  async function hydrateSectionThemes(items) {
+    await Promise.all(
+      items.map(async (item) => {
+        if (item.sectionTheme || !item.fullUrl) return;
+        try {
+          item.sectionTheme = extractSectionTheme(await fetchPageHtml(item.fullUrl));
+        } catch (error) {
+          /* colour simply falls back to the section theme */
+        }
       })
     );
   }
@@ -1266,6 +1524,7 @@
 
       const items = selectItems(data.items, settings);
       if (mode === "sections") await hydrateSections(items);
+      if (settings.colorMode === "section") await hydrateSectionThemes(items);
 
       if (el.sdlVerticalAccordion && typeof el.sdlVerticalAccordion.destroy === "function") {
         el.sdlVerticalAccordion.destroy();
