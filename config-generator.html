@@ -685,12 +685,12 @@
    Injected page sections (portfolio)
    -------------------------------------------------------------------------- */
 
-[data-sdl-plugin="vertical-accordions"] #sections {
+[data-sdl-plugin="vertical-accordions"] .va-sections {
   display: grid;
   min-height: 100%;
 }
 
-[data-sdl-plugin="vertical-accordions"] #sections > section:first-child {
+[data-sdl-plugin="vertical-accordions"] .va-sections > section:first-child {
   padding-top: 0;
 }
 
@@ -903,7 +903,7 @@
   max-width: none;
 }
 
-[data-sdl-plugin="vertical-accordions"].va-mobile #sections {
+[data-sdl-plugin="vertical-accordions"].va-mobile .va-sections {
   max-height: none;
 }
 
@@ -1800,7 +1800,7 @@ function sampleItems(type,n){
     sectionColor:SECTION_COLORS[i%SECTION_COLORS.length],
     fullUrl:"/"+type+"/"+it.title.toLowerCase().replace(/[^a-z0-9]+/g,"-"),
     image:placeholderImage(i,String(i+1).padStart(2,"0")), imageAlt:it.title,
-    sections:'<div id="sections" class="pv-sections">'+
+    sections:'<div class="va-sections pv-sections">'+
       '<section class="pv-section pv-section--hero"><h4>'+escapeHtml(it.title)+'</h4>'+
       '<p>'+escapeHtml(it.excerpt)+'</p></section>'+
       '<section class="pv-section"><div class="pv-img"><img src="'+placeholderImage(i,String(i+1).padStart(2,"0"))+'" alt=""></div></section>'+
@@ -2223,7 +2223,7 @@ function buildPreview(s){
   const isMobile=()=> s.mobileLayout==="stacked" && viewport.getBoundingClientRect().width<=s.mobileBreakpoint;
 
   function contentNodeOf(panel){
-    return panel.querySelector("#sections")||panel.querySelector(".va-card")||panel.querySelector(".accordion-content");
+    return panel.querySelector(".va-sections")||panel.querySelector(".va-card")||panel.querySelector(".accordion-content");
   }
   function measure(){
     const mobile=isMobile();
@@ -2247,9 +2247,15 @@ function buildPreview(s){
       titles.forEach(t=>t.style.width=w+"px");
       railTotal=w*titles.length;
     }
-    const cw=component.getBoundingClientRect().width;
+    // Rails, gaps and every panel's own border all come off the open panel's share.
+    const ccs=getComputedStyle(component);
+    const available=component.clientWidth-parseFloat(ccs.paddingLeft)-parseFloat(ccs.paddingRight);
     const gapTotal=Math.max(0,panels.length-1)*toNumber(s.panelGap,0);
-    component.style.setProperty("--va-active-width",Math.max(0,Math.floor(cw-railTotal-gapTotal))+"px");
+    let borderTotal=0;
+    panels.forEach(p=>{const cs=getComputedStyle(p);
+      borderTotal+=parseFloat(cs.borderLeftWidth)+parseFloat(cs.borderRightWidth);});
+    component.style.setProperty("--va-active-width",
+      Math.max(0,Math.floor(available-railTotal-gapTotal-borderTotal))+"px");
     applyPanelWidths();
     measureTallest();
   }

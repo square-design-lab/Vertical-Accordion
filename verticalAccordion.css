@@ -515,12 +515,12 @@
    Injected page sections (portfolio)
    -------------------------------------------------------------------------- */
 
-[data-sdl-plugin="vertical-accordions"] #sections {
+[data-sdl-plugin="vertical-accordions"] .va-sections {
   display: grid;
   min-height: 100%;
 }
 
-[data-sdl-plugin="vertical-accordions"] #sections > section:first-child {
+[data-sdl-plugin="vertical-accordions"] .va-sections > section:first-child {
   padding-top: 0;
 }
 
@@ -733,7 +733,7 @@
   max-width: none;
 }
 
-[data-sdl-plugin="vertical-accordions"].va-mobile #sections {
+[data-sdl-plugin="vertical-accordions"].va-mobile .va-sections {
   max-height: none;
 }
 

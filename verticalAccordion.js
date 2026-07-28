@@ -64,7 +64,8 @@
     weglotPaths: undefined,
 
     /* ---- Layout ---- */
-    layout: "rails", // rails | fullbleed | minimal
+    // Design name, surfaced as data-layout on the mount for custom CSS to hook.
+    layout: "rails", // rails | fullbleed | minimal | editorial | catalogue
     heightMode: "content", // content | fixed
     fixedHeight: "620px",
     minPanelHeight: "30vh",
@@ -435,7 +436,10 @@
       doc.querySelector("#sections section[data-section-theme]") ||
       doc.querySelector("section[data-section-theme]") ||
       doc.querySelector("[data-section-theme]");
-    return section ? section.getAttribute("data-section-theme") || "" : "";
+    if (!section) return "";
+    // Squarespace leaves the attribute empty on sections using the site default,
+    // which is the theme duplicateRootCssRule mirrors onto "white".
+    return section.getAttribute("data-section-theme") || "white";
   }
 
   function extractSectionsFromPageHtml(html) {
@@ -453,6 +457,13 @@
     sections.querySelectorAll("[data-page-sections]").forEach((el) => {
       el.removeAttribute("data-page-sections");
     });
+
+    // Every fetched page carries id="sections". Injecting several of them would
+    // put a handful of elements with the same id on the host page — invalid, and
+    // enough to make the site's own getElementById("sections") pick up one of
+    // ours. Carry the hook as a class instead.
+    sections.removeAttribute("id");
+    sections.classList.add("va-sections");
     return sections.outerHTML;
   }
 
@@ -1106,10 +1117,28 @@
         railTotal = width * titles.length;
       }
 
-      const componentWidth = component.getBoundingClientRect().width;
+      // Everything the open panel does NOT get: the rails, the gaps between
+      // panels, and every panel's own border. Miss the borders and the row
+      // overflows by a pixel per panel.
+      const componentStyle = getComputedStyle(component);
+      const available =
+        component.clientWidth -
+        parseFloat(componentStyle.paddingLeft) -
+        parseFloat(componentStyle.paddingRight);
+
       const gap = toNumber(settings.panelGap, 0);
       const gapTotal = Math.max(0, panels.length - 1) * gap;
-      const activeWidth = Math.max(0, Math.floor(componentWidth - railTotal - gapTotal));
+
+      let borderTotal = 0;
+      panels.forEach((panel) => {
+        const style = getComputedStyle(panel);
+        borderTotal += parseFloat(style.borderLeftWidth) + parseFloat(style.borderRightWidth);
+      });
+
+      const activeWidth = Math.max(
+        0,
+        Math.floor(available - railTotal - gapTotal - borderTotal)
+      );
       component.style.setProperty("--va-active-width", activeWidth + "px");
       applyPanelWidths();
 
@@ -1130,7 +1159,7 @@
 
     function contentNodeOf(panel) {
       return (
-        panel.querySelector("#sections") ||
+        panel.querySelector(".va-sections") ||
         panel.querySelector(".sqs-layout") ||
         panel.querySelector(".va-card") ||
         panel.querySelector(".accordion-content")
@@ -1505,7 +1534,12 @@
       return;
     }
 
-    if (settings.duplicateRootTheme) duplicateRootCssRule();
+    // colorMode "section" probes the site's theme variables, so the default-theme
+    // mirror has to be in place before the first probe rather than racing it.
+    if (settings.duplicateRootTheme) {
+      const themePatch = duplicateRootCssRule();
+      if (settings.colorMode === "section") await themePatch;
+    }
 
     try {
       const data = await collectionData(settings.source, settings);
